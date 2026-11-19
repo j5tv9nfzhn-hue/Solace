@@ -7,6 +7,7 @@
 - **账号 ID**：`af48f65049fad4485235e33a5b4a43e1`
 - **注册邮箱**：Google 邮箱（具体地址见 Cloudflare 欢迎邮件）
 - **登录方式（重要）**：**GitHub OAuth**（虽然注册邮箱是 Google，但 Cloudflare 账号是通过 GitHub 登录创建的。登录时选择 **Sign in with GitHub**，用 GitHub 账号 `wuyiliu391-hub` 授权即可）
+  - **2026-11-19 注**：GitHub 账号 `wuyiliu391-hub` 已停用；项目源码仓库已切到 `j5tv9nfzhn-hue/Solace`。Cloudflare 登录若仍绑定旧账号，请先确认迁移方案，必要时改用 `CLOUDFLARE_API_TOKEN` 部署。
 - **部署方式**：`wrangler pages deploy . --project-name solace-auth-v2`
 - **构建输出目录**：`solace/`（`wrangler.toml` 中 `pages_build_output_dir = "."`）
 

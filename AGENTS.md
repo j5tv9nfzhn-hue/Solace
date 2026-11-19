@@ -1,7 +1,7 @@
 # Solace — AGENTS.md
 
 > 给后续会话/代理的项目地图。**改代码前先读这里。**
-> 最后核对：2026-09-30（对照 `main` @ `4a150ac`、CI Flutter 3.47.5 / Dart 3.13.3）
+> 最后核对：2026-11-19（对照 `main` @ `ebad15c`、CI Flutter 3.47.5 / Dart 3.13.3）
 
 ## 协作约定
 
@@ -13,7 +13,8 @@
 
 Flutter 写的 **AI 陪伴应用**（Android 单平台）。多角色聊天 + 情感记忆引擎 + 人生模拟 + 微信 Bot + 语音通话。
 **隐私优先**：用户数据全在本机 SQLite（`solace.db`），不上传。
-当前版本 `20.0.0+20000`，`main` 已与 `origin/main` 同步（`origin` = `wuyiliu391-hub/Solace`）。
+当前版本 `20.1.0+20001`，`main` 已与 `origin/main` 同步。2026-11-19 起 `origin` 重绑为
+**`j5tv9nfzhn-hue/Solace`**（旧账号 `wuyiliu391-hub/Solace` 的 fork；旧账号已停用）。
 
 ## ⚠️ 本机没有 Flutter / JDK / Android SDK —— 唯一校验途径是 GitHub Actions
 
@@ -26,7 +27,7 @@ Flutter 写的 **AI 陪伴应用**（Android 单平台）。多角色聊天 + �
 - 所有编译/测试校验**只能**通过推送后由 `.github/workflows/ci.yml` 在 Ubuntu runner 上跑。
 - **一次改动 = 一次 CI 运行**，所以提交前必须靠阅读代码自检；`concurrency` 已开
   `cancel-in-progress`，连推会自动取消旧运行，不会白烧配额。
-- 查历史失败原因用 `gh`（已登录 `wuyiliu391-hub`）：
+- 查历史失败原因用 `gh`（已登录 `j5tv9nfzhn-hue`）：
   ```bash
   gh run list --limit 5
   gh run view <id> --log-failed          # 只看失败步骤
@@ -42,12 +43,13 @@ Flutter 写的 **AI 陪伴应用**（Android 单平台）。多角色聊天 + �
 所以每次都是冷启动（Flutter SDK + 200+ 个包重新下载，约 2.5 分钟）。
 **测试转绿是缓存能生效的前提** —— 缓存是在 job 的 post 阶段落盘的。
 
-修复后首次绿跑实测：**517 tests passed**，两个缓存均已落盘：
+修复后首次绿跑实测：**517 tests passed**（2026-09-30；2026-11-19 第二批死代码清理后
+测试数会减少，以 CI 实际输出为准），两个缓存均已落盘：
 
 | 缓存 key | 体积 |
 |----------|------|
 | `flutter-linux-stable-3.47.5-x64-<sha>` | 1640 MB |
-| `sol-pub-linux-3.47.5-<hash(pubspec.yaml)>` | 256 MB |
+| `sol-pub-linux-3.47.5-<hash(pubspec.yaml + pubspec.lock)>` | 256 MB |
 
 （仓库配额 10GB，现占约 1.9GB。）
 
@@ -56,13 +58,14 @@ Flutter 写的 **AI 陪伴应用**（Android 单平台）。多角色聊天 + �
 | 层 | 工具 | key |
 |----|------|-----|
 | Flutter SDK | `subosito/flutter-action@v2`（内部 `actions/cache`） | 版本+架构，钉死 `3.47.5` |
-| pub 依赖 | `actions/cache@v6` → `~/.pub-cache` | `sol-pub-linux-3.47.5-<hash(pubspec.yaml)>` |
+| pub 依赖 | `actions/cache@v6` → `~/.pub-cache` | `sol-pub-linux-3.47.5-<hash(pubspec.yaml + pubspec.lock)>` |
 | Gradle（仅 apk.yml） | `actions/cache@v6` → `~/.gradle` | `sol-gradle-linux-<hash(wrapper+build.gradle)>` |
 
 要点：
 
 - **key 不能带分支名**。GitHub 的 cache 默认按分支隔离，带了 `ref_name` 就等于放弃跨分支共享。
-- **key 必须基于 `pubspec.yaml`**，因为 `pubspec.lock` 被 gitignore，runner 上 checkout 后并不存在。
+- **key 必须基于 `pubspec.yaml` + `pubspec.lock`**：lock 已纳入版本控制（2026-11-19 起），
+  依赖（含传递依赖）真正变化时才换 key。
 - `restore-keys` 前缀兜底：依赖变了也复用旧 pub cache（pub cache 是内容寻址、可叠加，只补增量）。
 - **Flutter 版本要钉死**，别写 `3.47.x`：补丁版漂移会让 SDK 缓存 key 跟着变。
 - 别再额外加 `~/.pub-cache` 的 cache step —— `flutter-action` 的 `cache: true` 会**同时**缓存
@@ -84,15 +87,24 @@ Linux runner 上直接起不来。**已删除** —— 现在本地靠 `JAVA_HOM
 `Conflicting configuration : 'arm64-v8a' in ndk abiFilters cannot be present when splits abi filters are set`。
 arm64-only 改由命令行 `--target-platform android-arm64` 保证（见下方发布章节）。
 
-### 签名密钥的真实位置（2026-10-01 实测）
+### 签名密钥的真实位置与不可变约束（2026-11-19 核对）
 
-- **仓库里没有任何 `SOLACE_KEYSTORE_*` Secret**；已从 git 历史 `e432942`（init 提交）
-  取出 `android/key.properties` + `android/solace-release.jks` 写入 4 个 Secret。
+- **规范签名材料**：`android/solace-release.jks` + `android/key.properties`。
+  两者都在 `.gitignore`，只存在于本机与 GitHub Secrets，**禁止提交**。
+  别名 `solace`，有效期 100 年；密码只保存在 `key.properties` 与仓库 Secrets，
+  **任何文档、代码、提交信息都不得写入明文密码**。
+- ⚠️ **不可变约束**：严禁更换 keystore 文件、重新生成、修改密码或别名。
+  Android 靠「包名 + 签名一致」才能覆盖升级；一旦变化，已安装用户会安装失败，
+  只能卸载重装并丢失本地数据。若确需轮换，必须先出卸载/迁移公告再执行。
+- **Secret 配置状态无法从仓库代码确认**：`apk.yml` 读取 4 个 Secret
+  `SOLACE_KEYSTORE_BASE64` / `SOLACE_KEYSTORE_PASSWORD` / `SOLACE_KEY_ALIAS` /
+  `SOLACE_KEY_PASSWORD`。缺失时会回退生成一次性 debug keystore：构建能成功，
+  但**每次签名都不同**，发布前必须确认这 4 个 Secret 已配置。
 - keystore 是 **PKCS#12**（DER SEQUENCE 开头，魔数 `30820aa4`），不是 legacy JKS
   （`feedfeed`）。用 legacy 魔数去校验会误判为「提取损坏」。
-- ⚠️ **安全风险（未处理）**：这两个文件在 init 提交里以**明文**进过仓库历史，
-  仓库是公开的 → 签名私钥事实上已公开。任何人都能签出被系统当作官方更新的包。
-  正确处置是**换一把新 keystore** 并用 `git filter-repo`/BFG 清史，仅加 gitignore 不够。
+- ⚠️ **历史泄露风险（仍未处置）**：这两个文件在 init 提交 `e432942` 里以**明文**
+  进过公开仓库历史，签名私钥事实上已公开。彻底处置需清史；换新 keystore 会破坏
+  覆盖升级，必须和用户迁移方案一起评估，不能单独执行。
 - **PowerShell 提取二进制会损坏**：`git show ... > file` 走文本重定向，keystore 字节被改写。
   必须用 `git cat-file blob <sha> | python` 之类二进制安全管道。
 
@@ -196,10 +208,10 @@ multipart 的标量字段全部要转成字符串。
 
 ### APK 签名
 
-`android/*.jks` + `key.properties` 都 gitignore，CI 拿不到真签名密钥。
-`apk.yml` 优先读 Secrets `SOLACE_KEYSTORE_BASE64` / `SOLACE_KEYSTORE_PASSWORD` /
-`SOLACE_KEY_ALIAS` / `SOLACE_KEY_PASSWORD`；**没配就用 `keytool` 生成一次性 debug keystore**，
-保证 workflow 不会因缺密钥硬失败。要出真正式签名包，先把 4 个 secret 配上。
+`android/*.jks` + `key.properties` 都 gitignore，CI 靠 4 个 Secrets 注入真签名材料。
+**发布包必须命中 Secrets**；缺失时 `apk.yml` 会生成一次性 debug keystore，
+构建虽成功但签名与历史版本不一致，用户无法覆盖安装。详见上文
+「签名密钥的真实位置与不可变约束」。
 
 ## 命令（顺序即 CI 顺序）
 
@@ -217,7 +229,10 @@ flutter test test/xxx_test.dart                        # 单文件
 
 ### 容易踩的环境坑
 
-- **`pubspec.lock` 在 `.gitignore` 里**（应用项目少见）。所以：CI 无法锁定依赖版本；缓存 key 只能基于 `pubspec.yaml`。
+- **`pubspec.lock` 已纳入版本控制**（2026-11-19 起），用于锁定传递依赖；CI 两个 workflow
+  的 pub cache key 都基于 `pubspec.yaml` + `pubspec.lock`。锁内 hosted URL 统一为
+  `https://pub.dev`。本地若设了 `PUB_HOSTED_URL=https://pub.flutter-io.cn`，`pub get`
+  可能把 URL 改回镜像，**不要提交这种纯 URL 变更**；升级依赖时优先用官方源生成 lock。
 - `android/local.properties` 同样 gitignore，里面写 `flutter.sdk=` / `flutter.buildMode=release`。
 - 国内镜像：`PUB_HOSTED_URL` / `FLUTTER_STORAGE_BASE_URL` 指向 `flutter-io.cn`；`pubspec.yaml` 的
   `hooks.user_defines.sqlite3.url_pattern` 把 sqlite3 原生库下载走 ghproxy。**别删这个 hooks 块**。
@@ -267,7 +282,8 @@ flutter test test/xxx_test.dart                        # 单文件
 
 **新增 LLM 调用点必须调 `buildGlobalModePrompt`，禁止绕过。** 已注入：`prompt_builder`(单聊) / `ai_service` / `bridge/ai_service_adapter`(单聊桥接) / `pure_ai_service` / `wechat_bot_service` / `background_parts/bg_ai_core` / `memory_engine` + `memory_engine/compat_cross` / `ai_service/history_filter`（反思/记忆档案/群聊档案/群聊事件） / `persona_evolution_service` / `virtual_phone_generator` / `diary_helper` / `screens/discover/ai_diary_screen`。
 
-**刻意不注入**（非叙事聊天）：`ex_persona_analyzer`（角色逆向画像 JSON）、`proactive_decision_engine`（工具调用决策）、`announcement_service` / `update_service`（非 LLM）、`mimo_tts_service`（语音合成）。
+**刻意不注入**（非叙事聊天）：`proactive_decision_engine`（工具调用决策）、`announcement_service` / `update_service`（非 LLM）、`mimo_tts_service`（语音合成）。
+（`ex_persona_analyzer` 及其唯一入口 `ex_character_creator` 已在 2026-11-19 作为不可达代码删除。）
 
 ### 改 prompt 必跑的 3 个测试
 
@@ -444,7 +460,7 @@ flutter test test/xxx_test.dart                        # 单文件
 （对齐 `AICharacter` 早已有的 `clearColorHex` 写法），`GroupChatUpdateSession` 事件同步加了同名参数。
 `AvatarPicker` 的清除按钮走独立的 `onAvatarCleared` 回调，**不要**复用 `onAvatarSelected(null)`。
 
-## 已清理的死代码（2026-09-30）
+## 已清理的死代码（2026-09-30 首批 + 2026-11-19 第二批）
 
 排查出 25 个「有实现、无 UI 入口」的文件，共 **5235 行**已删除。判定口径：
 `lib/screens` + `lib/widgets`（UI 层）零引用，且 `lib/` 内除自身与相互引用外无调用方，
@@ -463,15 +479,59 @@ flutter test test/xxx_test.dart                        # 单文件
 
 随之消失的 3 个空目录：`lib/screens/chat/v2`、`lib/screens/memory/v2`、`lib/blocs/character`。
 
-**未删但需留意**：
-- `AgentLoop`（425 行）：生产代码零调用（`context_forgiveness` / `ai_service_adapter` 里的
-  "AgentLoop" 全是**注释**），但静态方法 `matchBtKeyword` 有 67 处测试在用，删要连带改测试
+**仍未删但需留意**：
 - `agent_tools.dart`（324 行）：`agentTools` 列表已死，但同文件的 `mapToolNameToBtAction` /
   `mapThemeMode` 被 `bloc_bt_agent.dart` 实际使用，**不能整文件删**
 
 > 教训：新增组件前先确认名字没被占用。`background_manager.dart` 里曾有一个旧的
 > `BackgroundPicker`，与新增的 `lib/widgets/background_picker.dart` 同名，
-> 同时 import 会 ambiguous。该旧文件已在本次删除。
+> 同时 import 会 ambiguous。该旧文件已在首批删除。
+
+### 2026-11-19 第二批：按入口可达性清理
+
+判定口径升级：从 `lib/main.dart` 出发做 `import` / `export` / `part` 可达性分析
+（**条件导入的两条 URI 都计入**），只删除完全不可达的文件。共删除 **60 个 lib 文件 / 10,151 行**，
+另删 1 个测试文件、2 个 graph 资源，以及 `solace/app` 的 58 个旧 Flutter Web 构建文件（28MB）：
+
+| 簇 | 代表文件 |
+|----|----------|
+| 旧微信 UI | `widgets/wechat/wx_*` 12 个（`wx_setting_row.dart` 仍被引用，保留） |
+| 角色逆向画像 | `services/ex_persona_analyzer.dart` + `screens/character/ex_character_creator.dart` |
+| AgentLoop | `services/agent/agent_loop.dart` + `test/agent_deterministic_routing_test.dart`；`bt_agent_regression_test.dart` 已去掉相关 import/用例 |
+| 旧组件 | `message_bubble_v2`、`message_actions`、`confirm_dialog`、`drawer_panel`、`fa_verification_screen`、`tag_filter`、`swipe_handler` 等 |
+| 旧仓库/工具 | `avatar_manager`、`character_repository`、`world_info_repository`、`storage_user_mixin`、`platform_*`、`id_card_*` 等 |
+
+- 条件导入的 `workmanager_helper_web.dart` / `workmanager_task_scheduler_web.dart`
+  **未删**（web 分支仍可能编译）。
+- 随之清空的 6 个目录：`repositories/mixins`、`screens/settings/v2`、`services/response`、
+  `widgets/graph`、`widgets/life`、`widgets/v2`。
+
+> 教训：删除前必须做可达性分析，而不是只看 basename 是否被 grep 到；
+> 条件导入的第二条 URI 也要计入，否则会误删 web 适配层。
+
+## 大文件阶段性拆分（长期约束）
+
+**每个后续任务至少推进一个文件的拆分**，纯移动、不改行为。优先顺序：
+
+| 阶段 | 文件 | 当前行数 | 建议拆法 |
+|------|------|----------|----------|
+| 1 | `lib/repositories/storage_parts/chat_messages.dart` | 2583 | 消息读写 / 会话 / prompt 配置 |
+| 2 | `lib/screens/chat/chat_settings_screen.dart` | 2940 | 按设置分区拆 part |
+| 3 | `lib/screens/group_chat/group_chat_detail_screen.dart` | 2501 | 群设置 / 成员 / 消息区 |
+| 4 | `lib/screens/memory/memory_screen.dart` | 2368 | 列表 / 详情 / 编辑 |
+| 5 | `lib/screens/profile/settings_screen.dart` | 2000 | 按设置分组 |
+| 6 | `lib/services/prompt/prompt_builder.dart` | 1506 | system 分段构建 |
+| 7 | `lib/screens/chat/chat_list_screen.dart` | 1441 | 列表 / 菜单 / 搜索 |
+| 8 | `lib/screens/settings/ai_config_screen.dart` | 1431 | 配置表单 / 测试 / 模型列表 |
+| 9 | `lib/screens/phone/phone_home_shell.dart` | 1406 | 桌面 / Dock / 小组件 |
+| 10 | `lib/repositories/storage_parts/export_moments_shop.dart` | 1445 | 导出 / 朋友圈 / 商店 |
+
+规则：
+
+- 一次任务只拆一个文件；先确认它属于哪个 facade（`part of`），沿用现有 `part` 目录。
+- 纯移动：不改逻辑、不改公开 API、不改 DB schema；diff 里只允许 import / part 变化。
+- 每个拆分单独提交、单独跑 CI；CI 红先回退该拆分，不连坐其他改动。
+- 拆完更新本表，并同步 `## 架构` 的 facade 表。
 
 ## 数据库
 
@@ -498,9 +558,11 @@ flutter build apk --release --split-per-abi --target-platform android-arm64 --no
 bash deploy.sh            # 根目录是 thin wrapper，转发 scripts/deploy.sh
 ```
 
-- **`scripts/deploy.sh` 找的是 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`**，也就是**必须带 `--split-per-abi`**。README 和 `phase0_release_1901.bat` 里的构建命令都缺这个 flag，按它们走 deploy.sh 会报 `Missing APK`。
+- **`scripts/deploy.sh` 找的是 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`**，也就是**必须带 `--split-per-abi`**。`phase0_release_1901.bat` 里的构建命令仍缺这个 flag（README 已于 2026-11-19 修正），按旧脚本走 deploy.sh 会报 `Missing APK`。
 - `deploy.sh` 读 `scripts/.env.local` 取 `CLOUDFLARE_API_TOKEN`；默认 project 是 `solace-auth`（可用 `CLOUDFLARE_PAGES_PROJECT` 覆盖），但线上实际是 **`solace-auth-v2`**。
 - 产物 `solace/app-release.apk*` 已 gitignore（deploy.sh 生成）。
+- 旧的 Flutter Web 构建 `solace/app/`（58 文件 / 28MB，`base href=/app/`）已于 2026-11-19 删除；
+  Pages 不再发布 `/app/`，Android APK 与下载页不受影响。
 - **`scripts/phase0_release_1901.bat` 已过期**：里面 commit message 和 `git tag v19.0.1` 都写死成 19.0.1，且用 `--project-name solace-auth-v2`。别直接跑，会打错 tag。
 - `scripts/push-to-github.bat` 会 force push，只在首次建仓用。
 
@@ -512,7 +574,7 @@ bash deploy.sh            # 根目录是 thin wrapper，转发 scripts/deploy.sh
 
 ## 数据库与测试相关的目录速查
 
-- 测试 63 个文件：55 个在 `test/` 根，8 个分布在 `life` / `moments` / `shop` / `voice` 四个子目录
+- 测试 68 个文件：60 个在 `test/` 根，8 个分布在 `life` / `moments` / `shop` / `voice` 四个子目录
 - 碰 SQLite 的测试用 `sqflite_common_ffi`（`test/shop_schema_recovery_test.dart`、`test/group_chat_session_safe_write_test.dart`、`test/group_chat_memory_eh_test.dart`），照抄它们的 `sqfliteFfiInit` + `databaseFactoryFfi` 初始化
 - 碰 HTTP 的测试用 `mocktail` + `http/testing.dart` 的 `MockClient` 抓请求体，别真发请求
 - `build_runner` / `json_serializable` 在 dev_dependencies，但只有 `models/story_state.dart` 一个生成产物（`story_state.g.dart`）——**别顺手给别的 model 加 `@JsonSerializable`**
@@ -523,7 +585,7 @@ bash deploy.sh            # 根目录是 thin wrapper，转发 scripts/deploy.sh
 |------|------|
 | `.github/workflows/ci.yml` | **唯一测试闸门**。analyze + test，缓存策略见上文 |
 | `.github/workflows/apk.yml` | APK 交付。仅 `workflow_dispatch` / `v*` tag 触发，**不跑测试** |
-| `README.md` | 功能、架构、调试方法论（**部分过时**：写 db v70、版本 19.0.0，构建命令缺 `--split-per-abi`） |
+| `README.md` | 功能、架构、调试方法论（2026-11-19 已同步至 20.1.0 / db v76 / 含 `--split-per-abi` 的构建命令） |
 | `docs/roadmap-20.0.0.md` | 20.0.0「共生」路线图 + Phase 0 |
 | `docs/release-20.0.0.md` | 20.0.0 发布记录（权威） |
 | `docs/design/20.0.0-mainline-*.md` | 三条主线设计 |

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/avatar_resolver.dart';
+import '../utils/avatar_resolver.dart';
 
 class TypingIndicator extends StatefulWidget {
   final String? avatarUrl;

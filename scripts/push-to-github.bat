@@ -7,7 +7,7 @@ git init
 
 echo [2/4] 添加远程仓库...
 git remote remove origin 2>nul
-git remote add origin https://github.com/wuyiliu391-hub/Solace.git
+git remote add origin https://github.com/j5tv9nfzhn-hue/Solace.git
 
 echo [3/4] 添加所有文件并提交...
 git add -A

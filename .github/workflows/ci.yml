@@ -50,16 +50,16 @@ jobs:
       # 1) key 里**不出现** github.ref / ref_name —— 所以 main、任意分支、apk.yml
       #    都命中同一把 key，这就是「跨 workflow / 跨环境」的最大化复用。
       #    （GitHub 的 cache 默认按分支隔离，key 里带分支名就等于放弃共享。）
-      # 2) key 基于 **pubspec.yaml** 而不是 pubspec.lock —— 本仓库 pubspec.lock 在
-      #    .gitignore 里（见 .gitignore），lock 文件在 runner 上 checkout 后并不存在。
-      #    restore-keys 做前缀兜底：pubspec.yaml 变了也能复用旧 pub cache 里的包
+      # 2) key 同时基于 **pubspec.yaml + pubspec.lock** —— lock 已纳入版本控制，
+      #    依赖真正变化（含传递依赖）时才换 key；只改业务代码仍命中同一份缓存。
+      #    restore-keys 做前缀兜底：依赖变了也能复用旧 pub cache 里的包
       #    （pub cache 是内容寻址的可叠加存储，只补下载增量，安全且省时间）。
       - name: Cache pub dependencies
         id: pub-cache
         uses: actions/cache@v6
         with:
           path: ~/.pub-cache
-          key: sol-pub-linux-3.47.5-${{ hashFiles('pubspec.yaml') }}
+          key: sol-pub-linux-3.47.5-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
           restore-keys: |
             sol-pub-linux-3.47.5-
             sol-pub-linux-

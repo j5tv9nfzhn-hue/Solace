@@ -66,6 +66,7 @@
 5. **死代码清理**（2026-08-25 已完成）：
    - 已删除 `chat_detail_screen.dart` 中 7 个无调用点方法（`_buildRelationshipHeader` / `_buildStatusBar` / `_buildIntimacyExpanded` / `_buildIntimacyCollapsed` / `_isToday` / `_relationshipLabel` / `_eventSourceLabel`），共 390 行。删除后 flutter analyze 保持 0 error。
    - **注意**：`lib/config/wechat_theme.dart`（WxTheme/WxColors/WxDimens）**并非冗余**，仍有 12 个活跃引用方（lib/widgets/wechat/ 下的微信皮肤组件：wx_preview_screen、wx_money_card、wx_moments_page、wx_me_page、wx_main_shell、wx_discover_page、wx_create_money_sheet、wx_conversation_tile、wx_contacts_page、wx_chat_input_bar、wx_chat_app_bar、wx_bubble），不得删除。
+   - **2026-11-19 更新**：上述 12 个微信皮肤组件与 `wechat_theme.dart` 已按 `main.dart` 入口可达性分析确认为不可达，并随第二批死代码清理删除；本段仅保留为历史记录。
 6. **杂项**（2026-08-25 已清理）：未跟踪文件 `鹈鹕.html`（趣味 Canvas 动画）已移入回收站（可恢复）。
 
 ## 五、结论

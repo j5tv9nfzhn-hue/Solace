@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Dart-%3E%3D3.0.0-blue?logo=dart" alt="Dart">
   <img src="https://img.shields.io/badge/Platform-Android-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/Version-19.0.0-orange" alt="Version">
+  <img src="https://img.shields.io/badge/Version-20.1.0-orange" alt="Version">
 </p>
 
 ---
@@ -259,8 +259,11 @@ solace/
 ### 构建 Release APK
 
 ```bash
-flutter build apk --release --target-platform android-arm64 --no-shrink
+flutter build apk --release --split-per-abi --target-platform android-arm64 --no-shrink
 ```
+
+> `--split-per-abi` 不能省略：`scripts/deploy.sh` 只认
+> `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`。
 
 ### 部署到 Cloudflare Pages
 
@@ -285,7 +288,7 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk
 
 ## 数据库设计
 
-当前数据库版本：**v70**，包含 40+ 张表：
+当前数据库版本：**v76**（`users.chatAlias` 我的代称），包含 40+ 张表：
 
 | 表名 | 用途 |
 |------|------|

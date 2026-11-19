@@ -52,12 +52,13 @@ jobs:
 
       # ── 缓存第 2 层：pub 依赖 ──
       # key 字符串与 ci.yml **逐字相同**，这是跨 workflow 命中同一份缓存的关键。
+      # lock 已纳入版本控制，hashFiles 同时包含 pubspec.yaml 与 pubspec.lock。
       - name: Cache pub dependencies
         id: pub-cache
         uses: actions/cache@v6
         with:
           path: ~/.pub-cache
-          key: sol-pub-linux-3.47.5-${{ hashFiles('pubspec.yaml') }}
+          key: sol-pub-linux-3.47.5-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
           restore-keys: |
             sol-pub-linux-3.47.5-
             sol-pub-linux-
