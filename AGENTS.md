@@ -1,7 +1,8 @@
 # Solace — AGENTS.md
 
 > 给后续会话/代理的项目地图。**改代码前先读这里。**
-> 最后核对：2026-11-19（对照 `main` @ `ebad15c`、CI Flutter 3.47.5 / Dart 3.13.3）
+> 最后核对：2026-11-20（对照 `main` @ `a0d97ce`、CI Flutter 3.47.5 / Dart 3.13.3；
+> 新 `origin` = `j5tv9nfzhn-hue/Solace`）
 
 ## 协作约定
 
@@ -96,10 +97,12 @@ arm64-only 改由命令行 `--target-platform android-arm64` 保证（见下方�
 - ⚠️ **不可变约束**：严禁更换 keystore 文件、重新生成、修改密码或别名。
   Android 靠「包名 + 签名一致」才能覆盖升级；一旦变化，已安装用户会安装失败，
   只能卸载重装并丢失本地数据。若确需轮换，必须先出卸载/迁移公告再执行。
-- **Secret 配置状态无法从仓库代码确认**：`apk.yml` 读取 4 个 Secret
-  `SOLACE_KEYSTORE_BASE64` / `SOLACE_KEYSTORE_PASSWORD` / `SOLACE_KEY_ALIAS` /
-  `SOLACE_KEY_PASSWORD`。缺失时会回退生成一次性 debug keystore：构建能成功，
-  但**每次签名都不同**，发布前必须确认这 4 个 Secret 已配置。
+- **Secret 状态（2026-11-20 已验证）**：4 个 Secret `SOLACE_KEYSTORE_BASE64` /
+  `SOLACE_KEYSTORE_PASSWORD` / `SOLACE_KEY_ALIAS` / `SOLACE_KEY_PASSWORD` 已配置到
+  新 origin `j5tv9nfzhn-hue/Solace`。release APK 构建日志确认走的是
+  `using repository signing key`（keystore 2728 bytes），未落到一次性 debug keystore。
+  若 Secrets 缺失，`apk.yml` 仍会回退生成一次性 debug keystore：构建能成功，
+  但**每次签名都不同**，发布前必须确认这 4 个 Secret 存在。
 - keystore 是 **PKCS#12**（DER SEQUENCE 开头，魔数 `30820aa4`），不是 legacy JKS
   （`feedfeed`）。用 legacy 魔数去校验会误判为「提取损坏」。
 - ⚠️ **历史泄露风险（仍未处置）**：这两个文件在 init 提交 `e432942` 里以**明文**
@@ -210,7 +213,8 @@ multipart 的标量字段全部要转成字符串。
 
 `android/*.jks` + `key.properties` 都 gitignore，CI 靠 4 个 Secrets 注入真签名材料。
 **发布包必须命中 Secrets**；缺失时 `apk.yml` 会生成一次性 debug keystore，
-构建虽成功但签名与历史版本不一致，用户无法覆盖安装。详见上文
+构建虽成功但签名与历史版本不一致，用户无法覆盖安装。2026-11-20 已在新 origin
+实测命中真密钥（`using repository signing key`）。详见上文
 「签名密钥的真实位置与不可变约束」。
 
 ## 命令（顺序即 CI 顺序）
