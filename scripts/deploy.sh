@@ -17,7 +17,7 @@ APK_SRC="$ROOT_DIR/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
 PAGES_DIR="$ROOT_DIR/solace"
 APK_DST="$PAGES_DIR/app-release.apk"
 APK_GZ="$PAGES_DIR/app-release.apk.gz"
-PROJECT_NAME="${CLOUDFLARE_PAGES_PROJECT:-solace-auth}"
+PROJECT_NAME="${CLOUDFLARE_PAGES_PROJECT:-solace}"
 
 WRANGLER_TMP_CONFIG=""
 if [[ -n "${CLOUDFLARE_API_TOKEN:-}" && -z "${XDG_CONFIG_HOME:-}" ]]; then

@@ -2,14 +2,12 @@
 
 ## Cloudflare Pages
 
-- **项目名称**：`solace-auth-v2`
-- **正式域名**：`solace-auth-v2.pages.dev`
-- **账号 ID**：`af48f65049fad4485235e33a5b4a43e1`
-- **注册邮箱**：Google 邮箱（具体地址见 Cloudflare 欢迎邮件）
-- **登录方式（重要）**：**GitHub OAuth**（虽然注册邮箱是 Google，但 Cloudflare 账号是通过 GitHub 登录创建的。登录时选择 **Sign in with GitHub**，用 GitHub 账号 `wuyiliu391-hub` 授权即可）
-  - **2026-11-19 注**：GitHub 账号 `wuyiliu391-hub` 已停用；项目源码仓库已切到 `j5tv9nfzhn-hue/Solace`。Cloudflare 登录若仍绑定旧账号，请先确认迁移方案，必要时改用 `CLOUDFLARE_API_TOKEN` 部署。
-- **部署方式**：`wrangler pages deploy . --project-name solace-auth-v2`
-- **构建输出目录**：`solace/`（`wrangler.toml` 中 `pages_build_output_dir = "."`）
+- **项目名称**：`solace`
+- **正式域名**：`solace-doc.pages.dev`
+- **账号 ID**：`151ba5486fc6e9e9eef7bd321c101ed0`（新账号；旧账号 `af48f65049fad4485235e33a5b4a43e1` 与旧域名 `solace-auth-v2.pages.dev` 不再使用）
+- **部署身份**：使用 **API Token**（`CLOUDFLARE_API_TOKEN`，需 Pages:Edit），不再走 GitHub OAuth（旧 GitHub 账号已停用）。
+- **部署方式**：`wrangler pages deploy . --project-name solace`
+- **构建输出目录**：`solace/`（`wrangler.toml` 中 `pages_build_output_dir = "."`，含 `compatibility_date` 与 `nodejs_compat`，否则 `DecompressionStream` 会因 `node:stream` 报错）
 
 ## 部署前准备
 
@@ -20,7 +18,7 @@
 
 ```bash
 cd /c/Users/Administrator/Desktop/Solace/solace
-npx wrangler pages deploy . --project-name solace-auth-v2
+npx wrangler pages deploy . --project-name solace
 ```
 
 ## 版本更新（发布新版本时同步）

@@ -4,7 +4,7 @@
   "minSdk": 23,
   "forceUpdate": false,
   "releaseDate": "2026-10-01",
-  "downloadUrl": "https://solace-auth-v2.pages.dev/api/v1/download?v=20.1.0",
+  "downloadUrl": "https://solace-doc.pages.dev/api/v1/download?v=20.1.0",
   "changelog": [
     "新增第二个语音合成供应商 Fish Audio：S2.1 Pro 免费档，可克隆音色、可调表现力",
     "语音通话稳定性：连续对话中锁定表现力与语速，消除「前稳后飘、尾段喘不上气」",

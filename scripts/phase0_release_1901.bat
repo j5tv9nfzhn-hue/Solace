@@ -55,7 +55,7 @@ if errorlevel 1 goto :fail
 echo.
 echo [0.6] 部署到 Cloudflare Pages
 pushd solace
-call npx wrangler pages deploy . --project-name solace-auth-v2
+call npx wrangler pages deploy . --project-name solace
 set DEPLOY_RC=%errorlevel%
 popd
 if not "%DEPLOY_RC%"=="0" (
@@ -71,7 +71,7 @@ git push origin v19.0.1
 echo.
 echo ============ Phase 0 完成 ============
 echo APK: build\app\outputs\flutter-apk\app-release.apk
-echo 站点: https://solace-auth-v2.pages.dev
+echo 站点: https://solace-doc.pages.dev
 pause
 exit /b 0
 

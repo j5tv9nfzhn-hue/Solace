@@ -1,2 +1,4 @@
-name = "solace-auth-v2"
+name = "solace"
 pages_build_output_dir = "."
+compatibility_date = "2026-11-20"
+compatibility_flags = ["nodejs_compat"]

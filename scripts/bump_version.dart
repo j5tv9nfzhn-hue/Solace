@@ -119,7 +119,7 @@ void _updateVersionJson(Directory root, String v, int b, bool dryRun) {
   );
   content = content.replaceFirstMapped(
     RegExp(r'"downloadUrl":\s*"[^"]*"'),
-    (m) => '"downloadUrl": "https://solace-auth-v2.pages.dev/api/v1/download?v=' + v + '"',
+    (m) => '"downloadUrl": "https://solace-doc.pages.dev/api/v1/download?v=' + v + '"',
   );
   _write(f, orig, content, dryRun, 'solace/version.json');
 }
@@ -142,7 +142,7 @@ void _updateWorkerJs(Directory root, String v, int b, bool dryRun) {
   );
   content = content.replaceFirstMapped(
     RegExp(r"downloadUrl:\s*'[^']*'"),
-    (m) => "downloadUrl: 'https://solace-auth-v2.pages.dev/api/v1/download?v=" + v + "'",
+    (m) => "downloadUrl: 'https://solace-doc.pages.dev/api/v1/download?v=" + v + "'",
   );
   _write(f, orig, content, dryRun, 'solace/_worker.js');
 }

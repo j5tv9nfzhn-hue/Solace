@@ -49,8 +49,8 @@ flutter build apk --release --target-platform android-arm64 --no-shrink
 1. 登录：`npx wrangler login`（GitHub OAuth，账号 `wuyiliu391-hub`）或 `CLOUDFLARE_API_TOKEN`
 2. 同步 `solace/` 站点与 `version.json` / `_worker.js` / HTML
 3. 将 `app-release.apk` 放到 Pages 可下载路径（按现有 `deploy.sh` / download API 约定）
-4. `cd solace && npx wrangler pages deploy . --project-name solace-auth-v2`
-5. 验证：`https://solace-auth-v2.pages.dev` 显示 20.0.0，更新检查接口返回 build 20000
+4. `cd solace && npx wrangler pages deploy . --project-name solace`
+5. 验证：`https://solace-doc.pages.dev` 显示 20.0.0，更新检查接口返回 build 20000
 
 ## 注意
 

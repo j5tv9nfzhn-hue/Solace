@@ -563,11 +563,11 @@ bash deploy.sh            # 根目录是 thin wrapper，转发 scripts/deploy.sh
 ```
 
 - **`scripts/deploy.sh` 找的是 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`**，也就是**必须带 `--split-per-abi`**。`phase0_release_1901.bat` 里的构建命令仍缺这个 flag（README 已于 2026-11-19 修正），按旧脚本走 deploy.sh 会报 `Missing APK`。
-- `deploy.sh` 读 `scripts/.env.local` 取 `CLOUDFLARE_API_TOKEN`；默认 project 是 `solace-auth`（可用 `CLOUDFLARE_PAGES_PROJECT` 覆盖），但线上实际是 **`solace-auth-v2`**。
+- `deploy.sh` 读 `scripts/.env.local` 取 `CLOUDFLARE_API_TOKEN`；默认 project 是 `solace`（可用 `CLOUDFLARE_PAGES_PROJECT` 覆盖），与 `wrangler.toml` 一致。新 Cloudflare 账号 `151ba5486fc6e9e9eef7bd321c101ed0`，正式域名 **`solace-doc.pages.dev`**；旧账号 `af48f65049fad4485235e33a5b4a43e1` 与旧域名 `solace-auth-v2.pages.dev` 不再使用。部署用 API Token，不走旧 GitHub OAuth。
 - 产物 `solace/app-release.apk*` 已 gitignore（deploy.sh 生成）。
 - 旧的 Flutter Web 构建 `solace/app/`（58 文件 / 28MB，`base href=/app/`）已于 2026-11-19 删除；
   Pages 不再发布 `/app/`，Android APK 与下载页不受影响。
-- **`scripts/phase0_release_1901.bat` 已过期**：里面 commit message 和 `git tag v19.0.1` 都写死成 19.0.1，且用 `--project-name solace-auth-v2`。别直接跑，会打错 tag。
+- **`scripts/phase0_release_1901.bat` 已过期**：里面 commit message 和 `git tag v19.0.1` 都写死成 19.0.1，且用 `--project-name solace`。别直接跑，会打错 tag。
 - `scripts/push-to-github.bat` 会 force push，只在首次建仓用。
 
 ## 安全红线

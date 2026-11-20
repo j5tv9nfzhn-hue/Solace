@@ -52,7 +52,7 @@
 | 0.2 | 跑测试 | `flutter test` | 全绿（或记录已知失败） |
 | 0.3 | 静态分析 | `flutter analyze` | 0 error |
 | 0.4 | 构建 APK | `flutter build apk --release --target-platform android-arm64 --no-shrink` | 产出 `app-release.apk` |
-| 0.5 | 部署 Pages | `cd solace && npx wrangler pages deploy . --project-name solace-auth-v2` | `solace-auth-v2.pages.dev` 显示 19.0.1 |
+| 0.5 | 部署 Pages | `cd solace && npx wrangler pages deploy . --project-name solace` | `solace-doc.pages.dev` 显示 19.0.1 |
 | 0.6 | 打 tag | `git tag v19.0.1 && git push origin main --tags` | 远端可见 tag |
 
 ### 版本号同步（5 文件）
