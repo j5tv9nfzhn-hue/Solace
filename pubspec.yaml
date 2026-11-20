@@ -63,11 +63,13 @@ dev_dependencies:
   build_runner: ^2.15.1
   json_serializable: ^6.14.0
 
-# sqlite3 原生库：国内走 ghproxy，避免直连 GitHub 超时
+# sqlite3 原生库：用系统自带的 libsqlite3，避免构建时从 GitHub/ghproxy 下载
+# （github runner 访问不了 ghproxy，国内本机又访问不了 GitHub，两条路都会让 flutter test 挂）
+# Android 端仍由 Flutter 插件提供 sqlite3，此配置只影响桌面/测试用的 native asset。
 hooks:
   user_defines:
     sqlite3:
-      url_pattern: 'https://ghproxy.net/https://github.com/simolus3/sqlite3.dart/releases/download/$RELEASE_TAG/$FILENAME'
+      source: system
 
 flutter:
   uses-material-design: true
