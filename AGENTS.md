@@ -238,9 +238,12 @@ flutter test test/xxx_test.dart                        # 单文件
   `https://pub.dev`。本地若设了 `PUB_HOSTED_URL=https://pub.flutter-io.cn`，`pub get`
   可能把 URL 改回镜像，**不要提交这种纯 URL 变更**；升级依赖时优先用官方源生成 lock。
 - `android/local.properties` 同样 gitignore，里面写 `flutter.sdk=` / `flutter.buildMode=release`。
-- 国内镜像：`PUB_HOSTED_URL` / `FLUTTER_STORAGE_BASE_URL` 指向 `flutter-io.cn`；`pubspec.yaml` 的
-  `hooks.user_defines.sqlite3.url_pattern` 把 sqlite3 原生库下载走 ghproxy。**别删这个 hooks 块**。
+- 国内镜像：`PUB_HOSTED_URL` / `FLUTTER_STORAGE_BASE_URL` 指向 `flutter-io.cn`。
   镜像 env **不要**在 CI 里设（runner 在美国，走国内镜像更慢）。
+- `pubspec.yaml` 的 `hooks.user_defines.sqlite3` 用 **`source: system`**（系统自带 `libsqlite3.so`），
+  **别删这个 hooks 块**。2026-11-20 之前用 `url_pattern` 走 ghproxy，结果 GitHub runner
+  访问不了 ghproxy（`Network is unreachable`）导致 `flutter test` 失败；国内本机又访问不了
+  GitHub 官方源，两条路都走不通，改用系统库后 CI 恢复绿（529 tests passed）。
 - Gradle 发行版走 `mirrors.cloud.tencent.com`（`android/gradle/wrapper/gradle-wrapper.properties`），
   Maven 走阿里云 + 腾讯云（`android/build.gradle`）。这是给国内本机准备的；CI 能用但偏慢，靠 Gradle 缓存摊平。
 
