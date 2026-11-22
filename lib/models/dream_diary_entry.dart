@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// 梦境日记 — 用户写给某个角色的脑洞剧情（不是角色写的 AI 日记）。
 ///
-/// 存储：SharedPreferences JSON 列表（[PrefKeys.dreamDiaryEntries]），
+/// 存储：SharedPreferences JSON 列表（`dream_diary_entries`），
 /// 不建表、不上传；只有用户逐条打开 [sharedWithCharacter] 后，
 /// 内容才会被注入该角色的单聊 prompt，角色才能读到并回应。
 class DreamDiaryEntry extends Equatable {
