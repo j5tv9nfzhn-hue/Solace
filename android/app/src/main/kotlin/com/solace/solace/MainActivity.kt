@@ -1,5 +1,6 @@
 package com.solace.solace
 
+import android.app.AlarmManager
 import android.app.AppOpsManager
 import android.app.admin.DevicePolicyManager
 import android.app.usage.UsageStatsManager
@@ -12,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.BatteryManager
 import android.os.Process
+import android.provider.CalendarContract
 import android.provider.MediaStore
 import android.provider.Settings
 import android.view.KeyEvent
@@ -142,6 +144,25 @@ class MainActivity : FlutterActivity() {
             "com.solace.solace/wellbeing"
         ).setMethodCallHandler { call, result ->
             handleWellbeingMethodCall(call, result)
+        }
+
+        // ─── 真实感上下文 MethodChannel（本地；日历只读标题+开始时间） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/reality"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "queryCalendarToday" -> {
+                    try {
+                        result.success(queryCalendarToday())
+                    } catch (e: SecurityException) {
+                        result.error("NO_CALENDAR_PERMISSION", "日历权限未授予", null)
+                    } catch (e: Exception) {
+                        result.error("CALENDAR_ERROR", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
         }
 
         // ─── 微信机器人前台保活 ───
@@ -325,6 +346,54 @@ class MainActivity : FlutterActivity() {
                 put("totalMs", s.totalTimeInForeground)
                 put("lastUsed", s.lastTimeUsed)
             })
+        }
+        return arr.toString()
+    }
+
+    // ─── 真实感上下文：今日日程（只读标题 + 开始时间，不读描述/地点/参与人） ───
+
+    private fun queryCalendarToday(): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            checkSelfPermission(android.Manifest.permission.READ_CALENDAR) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            throw SecurityException("日历权限未授予")
+        }
+        val dayStart = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val dayEnd = dayStart + 24 * 60 * 60 * 1000L
+        val projection = arrayOf(
+            CalendarContract.Events.TITLE,
+            CalendarContract.Events.DTSTART
+        )
+        val selection =
+            "${CalendarContract.Events.DTSTART} >= ? AND ${CalendarContract.Events.DTSTART} < ?"
+        val cursor = contentResolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            projection,
+            selection,
+            arrayOf(dayStart.toString(), dayEnd.toString()),
+            "${CalendarContract.Events.DTSTART} ASC"
+        ) ?: return "[]"
+        val arr = JSONArray()
+        cursor.use {
+            val titleIdx = it.getColumnIndex(CalendarContract.Events.TITLE)
+            val startIdx = it.getColumnIndex(CalendarContract.Events.DTSTART)
+            var count = 0
+            while (it.moveToNext() && count < 10) {
+                val title = if (titleIdx >= 0) it.getString(titleIdx) ?: "" else ""
+                if (title.isBlank()) continue
+                val start = if (startIdx >= 0) it.getLong(startIdx) else 0L
+                arr.put(JSONObject().apply {
+                    put("title", if (title.length > 40) title.take(40) else title)
+                    put("startMillis", start)
+                })
+                count++
+            }
         }
         return arr.toString()
     }

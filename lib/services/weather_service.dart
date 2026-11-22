@@ -140,6 +140,10 @@ class WeatherService {
     );
   }
 
+  /// 仅返回 3 小时内的缓存天气；无缓存返回 null（不回退默认晴天，
+  /// 避免把没拿到的数据当成真实天气写进上下文）。
+  WeatherData? getCachedWeatherOrNull() => _getCachedWeather();
+
   /// 从平台通道获取系统天气
   Future<WeatherData?> _getSystemWeather() async {
     // 平台通道调用在不同平台有不同实现
