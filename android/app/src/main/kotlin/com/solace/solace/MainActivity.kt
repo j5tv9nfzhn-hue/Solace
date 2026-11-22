@@ -13,6 +13,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.BatteryManager
 import android.os.Process
+import android.app.WallpaperManager
+import android.graphics.BitmapFactory
+import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.MediaStore
 import android.provider.Settings
@@ -159,6 +162,88 @@ class MainActivity : FlutterActivity() {
                         result.error("NO_CALENDAR_PERMISSION", "日历权限未授予", null)
                     } catch (e: Exception) {
                         result.error("CALENDAR_ERROR", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // ─── 确定性工具 MethodChannel（本地；只发系统 Intent / 调系统服务，
+        //       不读屏、不模拟点击、不自动支付/提交） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/automation"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setAlarm" -> {
+                    try {
+                        val hour = call.argument<Int>("hour") ?: -1
+                        val minute = call.argument<Int>("minute") ?: -1
+                        val message = call.argument<String>("message") ?: ""
+                        if (hour !in 0..23 || minute !in 0..59) {
+                            result.error("BAD_TIME", "闹钟时间不对", null)
+                            return@setMethodCallHandler
+                        }
+                        val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                            putExtra(AlarmClock.EXTRA_HOUR, hour)
+                            putExtra(AlarmClock.EXTRA_MINUTES, minute)
+                            putExtra(AlarmClock.EXTRA_MESSAGE, message)
+                            putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                        }
+                        if (intent.resolveActivity(packageManager) != null) {
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.error("NO_ALARM_APP", "系统没有可用的时钟应用", null)
+                        }
+                    } catch (e: Exception) {
+                        result.error("ALARM_FAILED", e.message, null)
+                    }
+                }
+                "addCalendarEvent" -> {
+                    try {
+                        val title = call.argument<String>("title") ?: ""
+                        val begin = call.argument<Number>("startMillis")?.toLong() ?: 0L
+                        val end = call.argument<Number>("endMillis")?.toLong() ?: 0L
+                        val description = call.argument<String>("description") ?: ""
+                        if (title.isBlank() || begin <= 0L || end <= begin) {
+                            result.error("BAD_EVENT", "日历事件缺标题或起止时间", null)
+                            return@setMethodCallHandler
+                        }
+                        val intent = Intent(Intent.ACTION_INSERT).apply {
+                            data = CalendarContract.Events.CONTENT_URI
+                            putExtra(CalendarContract.Events.TITLE, title)
+                            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, begin)
+                            putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end)
+                            if (description.isNotBlank()) {
+                                putExtra(
+                                    CalendarContract.Events.DESCRIPTION,
+                                    description
+                                )
+                            }
+                        }
+                        if (intent.resolveActivity(packageManager) != null) {
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.error("NO_CALENDAR_APP", "系统没有可用的日历应用", null)
+                        }
+                    } catch (e: Exception) {
+                        result.error("CALENDAR_FAILED", e.message, null)
+                    }
+                }
+                "setWallpaper" -> {
+                    try {
+                        val path = call.argument<String>("filePath") ?: ""
+                        val bitmap = BitmapFactory.decodeFile(path)
+                        if (bitmap == null) {
+                            result.error("BAD_IMAGE", "图片解码失败", null)
+                            return@setMethodCallHandler
+                        }
+                        WallpaperManager.getInstance(this).setBitmap(bitmap)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("WALLPAPER_FAILED", e.message, null)
                     }
                 }
                 else -> result.notImplemented()
