@@ -710,7 +710,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '点击右下角 + 创建角色',
+            '点击右上角 + 创建角色',
             style: TextStyle(
               fontSize: 14,
               color: colorScheme.onSurface.withOpacity(0.35),
