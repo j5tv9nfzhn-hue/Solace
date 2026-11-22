@@ -40,6 +40,7 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
               decoration: const BoxDecoration(color: Color(0xFFF1EFEB)),
             ),
       leading: IconButton(
+        tooltip: '返回',
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           color: iconColor,
@@ -506,6 +507,7 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
         _currentSession?.aiCharacterAvatar ?? widget.session.aiCharacterAvatar;
     return AppBar(
       leading: IconButton(
+        tooltip: '返回搜索结果',
         icon: const Icon(Icons.arrow_back),
         onPressed: _returnToSearchResults,
       ),
@@ -532,6 +534,7 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
   PreferredSizeWidget _buildSearchAppBar(ColorScheme colorScheme) {
     return AppBar(
       leading: IconButton(
+        tooltip: '退出搜索',
         icon: const Icon(Icons.arrow_back),
         onPressed: () {
           setState(() {
@@ -561,6 +564,7 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
       actions: [
         if (_searchQuery.isNotEmpty)
           IconButton(
+            tooltip: '清除搜索',
             icon: const Icon(Icons.close, size: 20),
             onPressed: () {
               setState(() {

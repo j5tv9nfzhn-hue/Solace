@@ -331,6 +331,7 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
               actions: [
                 const AiModelSwitcher(),
                 IconButton(
+                  tooltip: _session.isMuted ? '取消静音' : '静音',
                   icon: Icon(_session.isMuted
                       ? Icons.notifications_off
                       : Icons.notifications),
@@ -1191,6 +1192,7 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: '退出选择',
         icon: const Icon(Icons.close),
         onPressed: _exitSelection,
       ),
@@ -1411,6 +1413,7 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
                       _showLorebookEditor(entry);
                     },
                     trailing: IconButton(
+                      tooltip: '删除词条',
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () async {
                         await repository.deleteGroupChatLorebookEntry(entry.id);

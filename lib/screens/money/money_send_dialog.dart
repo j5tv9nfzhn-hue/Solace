@@ -98,6 +98,7 @@ class _MoneySendDialogState extends State<MoneySendDialog> {
                       fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 IconButton(
+                  tooltip: '关闭',
                   icon: const Icon(Icons.close, size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),

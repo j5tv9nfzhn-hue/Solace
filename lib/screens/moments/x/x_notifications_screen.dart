@@ -47,6 +47,7 @@ class _XNotificationsScreenState extends State<XNotificationsScreen> {
               fontWeight: FontWeight.bold,
             )),
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(Icons.arrow_back,
               color: MomentsTheme.textPrimary(context)),
           onPressed: () => Navigator.pop(context),

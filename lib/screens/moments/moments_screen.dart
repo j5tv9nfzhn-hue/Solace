@@ -651,6 +651,7 @@ class _MomentsScreenState extends State<MomentsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
+                    tooltip: '发送评论',
                     icon: Icon(Icons.send, color: colorScheme.onPrimary),
                     onPressed: () async {
                       if (textController.text.trim().isEmpty) return;

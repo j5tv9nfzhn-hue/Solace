@@ -88,6 +88,7 @@ class _GroupChatListScreenState extends State<GroupChatListScreen> {
         foregroundColor: colorScheme.onSurface,
         actions: [
           IconButton(
+            tooltip: '创建群聊',
             icon: Icon(Icons.add_circle_outline,
                 size: 24, color: colorScheme.onSurface),
             onPressed: () => _navigateToCreate(context),

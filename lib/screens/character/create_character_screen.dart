@@ -230,6 +230,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
           elevation: 0,
           leading: isEditing
               ? IconButton(
+                  tooltip: '返回',
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () {
                     _exitEditMode();

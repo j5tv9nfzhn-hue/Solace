@@ -143,6 +143,7 @@ class _XMomentsProfileScreenState extends State<XMomentsProfileScreen>
                   backgroundColor: MomentsTheme.cardBackground(context),
                   elevation: 0,
                   leading: IconButton(
+                    tooltip: '返回',
                     icon: Icon(Icons.arrow_back,
                         color: MomentsTheme.textPrimary(context)),
                     onPressed: () => Navigator.pop(context),

@@ -102,6 +102,7 @@ mixin _StateSelection on State<ChatDetailScreen>, _StateCore, _StateLoadCore {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: '退出选择',
         icon: const Icon(Icons.close),
         onPressed: _exitSelection,
       ),

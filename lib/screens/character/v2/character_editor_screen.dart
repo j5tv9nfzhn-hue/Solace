@@ -89,10 +89,11 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
         title: Text(widget.characterId != null ? '编辑角色' : '创建角色'),
         actions: [
           IconButton(
+            tooltip: _fav ? '取消收藏' : '收藏',
             icon: Icon(_fav ? Icons.star : Icons.star_border, color: _fav ? Colors.amber : null),
             onPressed: () => setState(() => _fav = !_fav),
           ),
-          IconButton(icon: const Icon(Icons.check), onPressed: _saveCharacter),
+          IconButton(tooltip: '保存', icon: const Icon(Icons.check), onPressed: _saveCharacter),
         ],
       ),
       body: SingleChildScrollView(
@@ -216,7 +217,7 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
           const SizedBox(width: 8),
           Text('备用问候', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
           const Spacer(),
-          IconButton(icon: const Icon(Icons.add, size: 20), onPressed: () => setState(() => _alternateGreetings.add(''))),
+          IconButton(tooltip: '添加备用问候', icon: const Icon(Icons.add, size: 20), onPressed: () => setState(() => _alternateGreetings.add(''))),
         ]),
         ...List.generate(_alternateGreetings.length, (index) {
           return Padding(
@@ -230,7 +231,7 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
                   decoration: InputDecoration(hintText: '备用问候 ${index + 1}', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
                 ),
               ),
-              IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => setState(() => _alternateGreetings.removeAt(index))),
+              IconButton(tooltip: '删除这条备用问候', icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => setState(() => _alternateGreetings.removeAt(index))),
             ]),
           );
         }),

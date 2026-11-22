@@ -267,6 +267,7 @@ class _BookmarkListScreenState extends State<BookmarkListScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: isDark ? Colors.white : Colors.black,

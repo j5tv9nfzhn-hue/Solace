@@ -75,6 +75,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             onPressed: () => _showHiddenChatSessions(context),
           ),
           IconButton(
+            tooltip: '新建聊天',
             icon: Icon(Icons.add_circle_outline, size: 24,
                 color: colorScheme.onSurface),
             onPressed: () => _showCreateOptions(context),

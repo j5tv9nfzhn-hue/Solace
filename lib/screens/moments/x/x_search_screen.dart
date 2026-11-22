@@ -62,6 +62,7 @@ class _XSearchScreenState extends State<XSearchScreen> {
         backgroundColor: MomentsTheme.cardBackground(context),
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(Icons.arrow_back,
               color: MomentsTheme.textPrimary(context)),
           onPressed: () => Navigator.pop(context),
@@ -81,6 +82,7 @@ class _XSearchScreenState extends State<XSearchScreen> {
             border: InputBorder.none,
             suffixIcon: _controller.text.isNotEmpty
                 ? IconButton(
+                    tooltip: '清除搜索',
                     icon: Icon(Icons.clear,
                         color: MomentsTheme.textSecondary(context)),
                     onPressed: () {

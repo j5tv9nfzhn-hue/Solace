@@ -616,6 +616,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                                 size: 20, color: Colors.redAccent),
                             title: Text(phrase),
                             trailing: IconButton(
+                              tooltip: '删除该短语',
                               icon: const Icon(Icons.close, size: 18),
                               onPressed: () async {
                                 await storage.removeForbiddenPhrase(phrase);
@@ -869,6 +870,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           leading: IconButton(
+            tooltip: '返回',
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context, _hasChanges),
           ),
