@@ -385,9 +385,10 @@ class _LoginTabState extends State<_LoginTab> {
                   hintText: '至少6位',
                   border: const OutlineInputBorder(),
                   isDense: true,
-                  suffix: GestureDetector(
-                    onTap: () => obscure.value = !obscure.value,
-                    child: Icon(o ? Icons.visibility_off : Icons.visibility,
+                  suffixIcon: IconButton(
+                    tooltip: o ? '显示密码' : '隐藏密码',
+                    onPressed: () => obscure.value = !obscure.value,
+                    icon: Icon(o ? Icons.visibility_off : Icons.visibility,
                         size: 20),
                   ),
                 ),
@@ -403,9 +404,10 @@ class _LoginTabState extends State<_LoginTab> {
                   labelText: '确认新密码',
                   border: const OutlineInputBorder(),
                   isDense: true,
-                  suffix: GestureDetector(
-                    onTap: () => obscure2.value = !obscure2.value,
-                    child: Icon(o ? Icons.visibility_off : Icons.visibility,
+                  suffixIcon: IconButton(
+                    tooltip: o ? '显示密码' : '隐藏密码',
+                    onPressed: () => obscure2.value = !obscure2.value,
+                    icon: Icon(o ? Icons.visibility_off : Icons.visibility,
                         size: 20),
                   ),
                 ),
@@ -496,9 +498,10 @@ class _LoginTabState extends State<_LoginTab> {
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 decoration: _inputDeco(cs, '密码', const Icon(Icons.lock_outline),
-                    suffix: GestureDetector(
-                      onTap: () => setState(() => _obscure = !_obscure),
-                      child: Icon(
+                    suffix: IconButton(
+                      tooltip: _obscure ? '显示密码' : '隐藏密码',
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(
                           _obscure ? Icons.visibility_off : Icons.visibility,
                           size: 20),
                     )),
@@ -528,11 +531,14 @@ class _LoginTabState extends State<_LoginTab> {
                 ),
               ),
               const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _forgotPassword,
-                child: Text('忘记密码？',
-                    style: TextStyle(
-                        fontSize: 13, color: cs.primary.withOpacity(0.7))),
+              TextButton(
+                onPressed: _forgotPassword,
+                style: TextButton.styleFrom(
+                  foregroundColor: cs.primary.withOpacity(0.7),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('忘记密码？', style: TextStyle(fontSize: 13)),
               ),
             ],
           ),
@@ -646,9 +652,10 @@ class _RegisterTabState extends State<_RegisterTab> {
                 textInputAction: TextInputAction.next,
                 decoration: _inputDeco(
                     cs, '设置密码', const Icon(Icons.lock_outline),
-                    suffix: GestureDetector(
-                      onTap: () => setState(() => _obscure = !_obscure),
-                      child: Icon(
+                    suffix: IconButton(
+                      tooltip: _obscure ? '显示密码' : '隐藏密码',
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(
                           _obscure ? Icons.visibility_off : Icons.visibility,
                           size: 20),
                     )),
@@ -662,9 +669,10 @@ class _RegisterTabState extends State<_RegisterTab> {
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 decoration: _inputDeco(cs, '确认密码', const Icon(Icons.lock),
-                    suffix: GestureDetector(
-                      onTap: () => setState(() => _obscure2 = !_obscure2),
-                      child: Icon(
+                    suffix: IconButton(
+                      tooltip: _obscure2 ? '显示密码' : '隐藏密码',
+                      onPressed: () => setState(() => _obscure2 = !_obscure2),
+                      icon: Icon(
                           _obscure2 ? Icons.visibility_off : Icons.visibility,
                           size: 20),
                     )),
