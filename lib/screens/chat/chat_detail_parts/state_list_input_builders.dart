@@ -408,9 +408,9 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                             _syncCanSend();
                           },
                           child: Container(
-                            width: 36,
-                            height: 40,
-                            margin: const EdgeInsets.only(right: 4, bottom: 2),
+                            width: 48,
+                            height: 48,
+                            margin: const EdgeInsets.only(right: 4),
                             alignment: Alignment.center,
                             child: Text(
                               '()',
@@ -495,18 +495,22 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                       ),
                       const SizedBox(width: 8),
                       // 表情按钮
-                      GestureDetector(
-                        onTap: _showStickerPicker,
-                        child: Container(
-                          width: 36,
-                          height: 40,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.emoji_emotions_outlined,
-                            color: isDark
-                                ? Colors.white.withOpacity(0.6)
-                                : Colors.black.withOpacity(0.5),
-                            size: 24,
+                      Semantics(
+                        label: '表情',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: _showStickerPicker,
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.emoji_emotions_outlined,
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.6)
+                                  : Colors.black.withOpacity(0.5),
+                              size: 24,
+                            ),
                           ),
                         ),
                       ),
@@ -516,36 +520,43 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                         valueListenable: _canSendNotifier,
                         builder: (context, canSend, _) {
                           if (canSend) {
-                            return GestureDetector(
-                              onTap: _sendMessage,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                margin: const EdgeInsets.only(bottom: 2),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_upward_rounded,
-                                  color: Colors.white,
-                                  size: 22,
+                            return Semantics(
+                              label: '发送',
+                              button: true,
+                              child: GestureDetector(
+                                onTap: _sendMessage,
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_upward_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
                               ),
                             );
                           } else {
-                            return GestureDetector(
-                              onTap: _showMoreActions,
-                              child: Container(
-                                width: 36,
-                                height: 40,
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.add_circle_outline,
-                                  color: isDark
-                                      ? Colors.white.withOpacity(0.6)
-                                      : Colors.black.withOpacity(0.5),
-                                  size: 24,
+                            return Semantics(
+                              label: '更多操作',
+                              button: true,
+                              child: GestureDetector(
+                                onTap: _showMoreActions,
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.add_circle_outline,
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.6)
+                                        : Colors.black.withOpacity(0.5),
+                                    size: 24,
+                                  ),
                                 ),
                               ),
                             );
@@ -580,40 +591,44 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
             ? Colors.white.withOpacity(0.12)
             : Colors.black.withOpacity(0.10));
 
-    return GestureDetector(
-      onTap: () => setState(() => _webSearchEnabled = !_webSearchEnabled),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: borderColor),
-          boxShadow: enabled
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.24),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.public_rounded, size: 15, color: fgColor),
-            const SizedBox(width: 6),
-            Text(
-              '联网搜索',
-              style: TextStyle(
-                color: fgColor,
-                fontSize: 13,
-                fontWeight: enabled ? FontWeight.w600 : FontWeight.w500,
+    return Semantics(
+      label: enabled ? '联网搜索已开启' : '联网搜索已关闭',
+      button: true,
+      child: GestureDetector(
+        onTap: () => setState(() => _webSearchEnabled = !_webSearchEnabled),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: borderColor),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.24),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.public_rounded, size: 15, color: fgColor),
+              const SizedBox(width: 6),
+              Text(
+                '联网搜索',
+                style: TextStyle(
+                  color: fgColor,
+                  fontSize: 13,
+                  fontWeight: enabled ? FontWeight.w600 : FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
