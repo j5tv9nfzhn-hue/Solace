@@ -26,6 +26,7 @@ import 'screens/discover/ai_mailbox_screen.dart';
 import 'screens/discover/ai_diary_screen.dart';
 import 'screens/discover/entertainment_screen.dart';
 import 'screens/discover/bookmark_list_screen.dart';
+import 'screens/discover/limited_event_screen.dart';
 import 'screens/character/create_character_screen.dart';
 import 'screens/settings/ai_config_screen.dart';
 import 'screens/profile/settings_screen.dart';

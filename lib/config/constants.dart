@@ -108,6 +108,9 @@ class PrefKeys {
   static const String chatStyleMode = 'chat_style_mode';
   static const String novelDialogueColor = 'novel_dialogue_color';
   static const String autoDiaryEnabled = 'auto_diary_enabled';
+  /// 限定剧情：节日/生日/纪念日当天，角色在 system prompt 里主动提起过节。
+  /// 默认开启（只在当天注入一段提示，不弹窗、不推送、不打扰）。
+  static const String limitedEventEnabled = 'limited_event_enabled';
   static const String appUsageAwareness = 'app_usage_awareness';
 
   // ─── 生活自动化：时间触发开关（默认开，设置页可关）───
@@ -115,7 +118,7 @@ class PrefKeys {
   static const String timeTriggerLongScreen =
       'time_trigger_long_screen_enabled';
   static const String timeTriggerLateNight =
-      'time_trigger_late_night_enabled';
+      'time_trigger_late_night_enabled'; (feat: 限定剧情事件（节日/生日限时剧情，错过等明年）)
   static const String pureAiModeEnabled = 'pure_ai_mode_enabled';
 
   // ─── AI Token 消耗总控（全局）───

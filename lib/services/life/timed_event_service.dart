@@ -70,6 +70,12 @@ class TimedEventService {
   /// 检查并触发今天的所有事件
   ///
   /// 返回已触发的事件（用于调用方决定是否推消息/通知）
+  ///
+  /// 注意：每年重复的事件每年都要重新触发一次。旧实现只查
+  /// `fired_at IS NULL`，重复事件触发过一次后 `fired_at` 再也不为空，
+  /// 第二年就永远不再触发（限定剧情“错过等明年”会被这个 bug 堵死）。
+  /// 现在改为：未触发过的触发；重复事件上次触发年份不是今年的也触发；
+  /// 一次性事件触发过就不再触发。
   Future<List<TimedEvent>> checkAndFire({
     required String userId,
     required String characterId,
@@ -77,13 +83,20 @@ class TimedEventService {
     final now = DateTime.now();
     final rows = await _db.query(
       'ai_timed_events',
-      where: 'user_id = ? AND character_id = ? AND fired_at IS NULL',
+      where: 'user_id = ? AND character_id = ?',
       whereArgs: [userId, characterId],
     );
     final fired = <TimedEvent>[];
     for (final row in rows) {
       final ev = TimedEvent.fromMap(row);
       if (!ev.isToday(now)) continue;
+      final firedAt = ev.firedAt;
+      if (firedAt != null) {
+        if (!ev.recurring) continue;
+        if (DateTime.fromMillisecondsSinceEpoch(firedAt).year == now.year) {
+          continue;
+        }
+      }
       await _db.update(
         'ai_timed_events',
         {'fired_at': now.millisecondsSinceEpoch},

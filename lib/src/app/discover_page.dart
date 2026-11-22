@@ -84,6 +84,8 @@ class _DiscoverPageState extends State<_DiscoverPage>
           '/mailbox', cs, tt),
       _tile(context, Icons.menu_book_rounded, '角色日记', 'TA 的内心独白', '/diary',
           cs, tt),
+      _tile(context, Icons.celebration_outlined, '限定剧情', '节日限时剧情，错过等明年',
+          '/limited_events', cs, tt),
       _tile(context, Icons.bookmark_rounded, '收藏消息', '回顾收藏的聊天记录', '/bookmarks',
           cs, tt),
       _tile(context, Icons.auto_fix_high, '塔罗牌', '每日占卜', '/tarot', cs, tt),

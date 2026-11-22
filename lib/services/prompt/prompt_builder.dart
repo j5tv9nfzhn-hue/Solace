@@ -8,6 +8,7 @@ import '../../utils/message_sanitizer.dart';
 import '../../config/constants.dart';
 import '../memory_engine.dart';
 import '../emotion_engine.dart';
+import '../limited_event_service.dart';
 import '../dialogue_strategy.dart';
 import '../prompt_rewriter.dart';
 import '../moment_context_service.dart';
@@ -1056,6 +1057,23 @@ class PromptBuilder {
       }
     } catch (e) {
       debugPrint('AIService: 社交记忆注入失败 — $e');
+    }
+
+// 限定剧情：节日当天，角色主动提起过节（默认开启，可在限定剧情页关闭）。
+// 只在当天注入一段提示，不弹窗、不推送；没有进行中的节日时不注入任何内容。
+    try {
+      if (!pureAiMode &&
+          (_storage.getBool(PrefKeys.limitedEventEnabled) ?? true)) {
+        final limitedBlock = LimitedEventService.buildPromptBlock(
+          now: DateTime.now(),
+          characterName: character.name,
+        );
+        if (limitedBlock.isNotEmpty) {
+          buffer.writeln(limitedBlock);
+        }
+      }
+    } catch (e) {
+      debugPrint('AIService: 限定剧情注入失败 — $e');
     }
 
 // 朋友圈/动态闭环：注入「角色发过/评论过/看到过的动态」，让角色知道自己做过什么
