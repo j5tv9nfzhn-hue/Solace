@@ -33,6 +33,21 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> {
   List<ChatSession> _hiddenSessions = [];
   bool _showHiddenSessions = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// 本地筛选：名字或最后一条消息含关键词即命中，忽略大小写。
+  bool _matchesQuery(String? text) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    return (text ?? '').toLowerCase().contains(query);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +113,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           return Column(
             children: [
               _buildSearchBar(context),
-              if (chatSessions.isNotEmpty)
+              if (chatSessions.isNotEmpty && _searchQuery.trim().isEmpty)
                 _buildOnlineFriendsRow(context, chatSessions),
               Expanded(
                 child: BlocBuilder<GroupChatBloc, GroupChatState>(
@@ -116,11 +131,25 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         groupState is GroupChatSessionsLoaded
                             ? groupState.sessions
                             : <GroupChatSession>[];
-                    // 单聊和群聊都为空才显示空态
-                    if (chatSessions.isEmpty && groupSessions.isEmpty) {
-                      return _buildEmptyState(context);
+                    // 搜索时只保留命中的会话，搜不到时给“无结果”空态而不是“暂无消息”
+                    final filteredChatSessions = chatSessions
+                        .where((s) =>
+                            _matchesQuery(s.aiCharacterName) ||
+                            _matchesQuery(s.lastMessage))
+                        .toList();
+                    final filteredGroupSessions = groupSessions
+                        .where((g) =>
+                            _matchesQuery(g.name) ||
+                            _matchesQuery(g.lastMessage))
+                        .toList();
+                    if (filteredChatSessions.isEmpty &&
+                        filteredGroupSessions.isEmpty) {
+                      return _searchQuery.trim().isNotEmpty
+                          ? _buildNoSearchResultState(context)
+                          : _buildEmptyState(context);
                     }
-                    return _buildChatList(context, chatSessions, groupSessions);
+                    return _buildChatList(context, filteredChatSessions,
+                        filteredGroupSessions);
                   },
                 ),
               ),
@@ -187,16 +216,41 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Row(
           children: [
             const SizedBox(width: 12),
-            Icon(Icons.search, size: 20,
-                color: colorScheme.onSurface.withOpacity(0.4)),
+            Icon(Icons.search,
+                size: 20, color: colorScheme.onSurface.withOpacity(0.4)),
             const SizedBox(width: 8),
-            Text(
-              '搜索',
-              style: TextStyle(
-                fontSize: 15,
-                color: colorScheme.onSurface.withOpacity(0.4),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                textInputAction: TextInputAction.search,
+                style: TextStyle(fontSize: 15, color: colorScheme.onSurface),
+                decoration: InputDecoration(
+                  hintText: '搜索聊天 / 群聊',
+                  hintStyle: TextStyle(
+                    fontSize: 15,
+                    color: colorScheme.onSurface.withOpacity(0.4),
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
             ),
+            if (_searchQuery.isNotEmpty)
+              IconButton(
+                tooltip: '清除搜索',
+                icon: Icon(Icons.close,
+                    size: 18, color: colorScheme.onSurface.withOpacity(0.5)),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+                padding: EdgeInsets.zero,
+                constraints:
+                    const BoxConstraints(minWidth: 40, minHeight: 40),
+              ),
+            const SizedBox(width: 4),
           ],
         ),
       ),
@@ -568,6 +622,49 @@ class _ChatListScreenState extends State<ChatListScreen> {
               },
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 搜索无结果空态：与“暂无消息”区分开，并给一键清除搜索的出口。
+  Widget _buildNoSearchResultState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_outlined,
+                size: 48, color: colorScheme.onSurface.withOpacity(0.35)),
+            const SizedBox(height: 16),
+            Text(
+              '没有找到相关聊天',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '换个关键词试试',
+              style: TextStyle(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.4),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+              child: const Text('清除搜索'),
             ),
           ],
         ),
