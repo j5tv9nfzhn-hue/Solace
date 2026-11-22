@@ -72,16 +72,22 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
                   leadingWidth: 56,
                   leading:
                       _profileButton(context, userId, userName, userAvatar),
-                  title: Icon(
-                    Icons.close,
-                    size: 30,
-                    color: MomentsTheme.textPrimary(context),
+                  title: Semantics(
+                    // 标题处是 X 造型 logo（Icons.close 只是形状），读屏会误读成“关闭”，
+                    // 给它一个真实语义；视觉上不变。
+                    label: 'Solace 动态',
+                    child: Icon(
+                      Icons.close,
+                      size: 30,
+                      color: MomentsTheme.textPrimary(context),
+                    ),
                   ),
                   centerTitle: true,
                   actions: [
                     _circleIconButton(
                       context,
                       icon: Icons.search,
+                      tooltip: '搜索',
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -91,6 +97,7 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
                     _circleIconButton(
                       context,
                       icon: Icons.notifications_none_rounded,
+                      tooltip: '通知',
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -176,9 +183,31 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
     }
     if (state is MomentsFeedError) {
       return Center(
-        child: Text(
-          state.message,
-          style: TextStyle(color: MomentsTheme.textSecondary(context)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline,
+                  size: 48,
+                  color: MomentsTheme.textSecondary(context)),
+              const SizedBox(height: 16),
+              Text(
+                state.message,
+                style: TextStyle(color: MomentsTheme.textSecondary(context)),
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () =>
+                    context.read<MomentsFeedBloc>().add(MomentsFeedLoad()),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('重试'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -233,21 +262,25 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
     String? userAvatar,
   ) {
     return Center(
-      child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => XMomentsProfileScreen(
-              userId: userId,
-              userName: userName,
-              userAvatar: userAvatar,
+      child: Semantics(
+        label: '我的主页',
+        button: true,
+        child: GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => XMomentsProfileScreen(
+                userId: userId,
+                userName: userName,
+                userAvatar: userAvatar,
+              ),
             ),
           ),
-        ),
-        child: CircularAvatar(
-          avatarPath: userAvatar,
-          name: userName,
-          radius: 17,
+          child: CircularAvatar(
+            avatarPath: userAvatar,
+            name: userName,
+            radius: 17,
+          ),
         ),
       ),
     );
@@ -256,9 +289,11 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
   Widget _circleIconButton(
     BuildContext context, {
     required IconData icon,
+    required String tooltip,
     required VoidCallback onTap,
   }) {
     return IconButton(
+      tooltip: tooltip,
       splashRadius: 22,
       icon: Icon(icon, color: MomentsTheme.textPrimary(context), size: 24),
       onPressed: onTap,
@@ -283,11 +318,14 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 52,
+          height: 58,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(items.length, (index) {
               final active = _bottomIndex == index;
+              final itemColor = active
+                  ? MomentsTheme.textPrimary(context)
+                  : MomentsTheme.textSecondary(context);
               return Expanded(
                 child: InkResponse(
                   radius: 28,
@@ -313,12 +351,30 @@ class _XMomentsFeedScreenState extends State<XMomentsFeedScreen> {
                       );
                     }
                   },
-                  child: Icon(
-                    items[index].$1,
-                    size: 27,
-                    color: active
-                        ? MomentsTheme.textPrimary(context)
-                        : MomentsTheme.textSecondary(context),
+                  // 原来底部导航只有 4 个纯图标：新用户不知道哪个是书签，
+                  // 读屏也只能读到“按钮”。图标下补文字标签，选中态同时用
+                  // 颜色+字重区分，不只靠颜色。
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        items[index].$1,
+                        size: 24,
+                        color: itemColor,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        items[index].$2,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: active
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: itemColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
