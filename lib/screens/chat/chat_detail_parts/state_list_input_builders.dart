@@ -272,11 +272,10 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                   ),
                 ),
                 IconButton(
+                  tooltip: '取消引用',
                   icon: Icon(Icons.close,
                       size: 18, color: colorScheme.onSurface.withOpacity(0.4)),
                   onPressed: _cancelReply,
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
                 ),
               ],
             ),
