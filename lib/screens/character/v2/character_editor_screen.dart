@@ -143,21 +143,32 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
 
   Widget _buildAvatarSection(ColorScheme cs) {
     return Center(
-      child: GestureDetector(
-        onTap: () {},
-        child: Container(
-          width: 120, height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle, color: cs.outlineVariant,
-            border: Border.all(color: cs.onSurfaceVariant, width: 2),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_a_photo, size: 32, color: cs.onSurfaceVariant),
-              const SizedBox(height: 4),
-              Text('点击选择头像', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-            ],
+      // 角色卡 V2（CharacterCardV2）没有头像字段，保存时无处可存，
+      // 所以这里原来写着“点击选择头像”却是个空回调。先如实说明，
+      // 不要让用户以为点一下就能选；要支持头像需先给模型加字段。
+      child: Semantics(
+        label: '角色头像，当前版本暂不支持设置',
+        button: true,
+        child: GestureDetector(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('角色卡 V2 暂不支持设置头像')),
+            );
+          },
+          child: Container(
+            width: 120, height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle, color: cs.outlineVariant,
+              border: Border.all(color: cs.onSurfaceVariant, width: 2),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_a_photo, size: 32, color: cs.onSurfaceVariant),
+                const SizedBox(height: 4),
+                Text('暂不支持头像', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              ],
+            ),
           ),
         ),
       ),
