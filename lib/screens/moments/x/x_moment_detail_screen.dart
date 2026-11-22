@@ -152,7 +152,8 @@ class _XMomentDetailScreenState extends State<XMomentDetailScreen> {
               onLike: () => _toggleLike(_moment!, userId, userName),
               onBookmark: () => _toggleBookmark(_moment!, userId),
               onReply: () => _openReply(userId, userName, userAvatar),
-              onRetweet: () {},
+              onRetweet: () =>
+                  _showRetweetSheet(_moment!, userId, userName, userAvatar),
               onProfileTap: () => _openProfile(_moment!),
               onDelete: _moment!.userId == userId
                   ? () => _deleteMoment(_moment!.id)
@@ -182,6 +183,82 @@ class _XMomentDetailScreenState extends State<XMomentDetailScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// 转发菜单：与信息流同款。详情页没有 MomentsFeedBloc，
+  /// 直接调存储层做同样的两步（建转发动态 + 原帖转发数 +1）。
+  void _showRetweetSheet(
+      Moment moment, String userId, String userName, String? userAvatar) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: MomentsTheme.cardBackground(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: MomentsTheme.divider(context),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Icon(MomentsTheme.retweet,
+                  color: MomentsTheme.retweetColor(context)),
+              title: const Text('转发'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final storage = context.read<LocalStorageRepository>();
+                final retweet = Moment(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  userId: userId,
+                  userName: userName,
+                  content: '',
+                  source: MomentSource.x,
+                  retweetKey: moment.id,
+                  createdAt: DateTime.now(),
+                );
+                await storage.saveMoment(retweet);
+                await storage.incrementRetweetCount(moment.id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('已转发')),
+                  );
+                  _loadData();
+                }
+              },
+            ),
+            ListTile(
+              leading:
+                  Icon(MomentsTheme.edit, color: MomentsTheme.primary(context)),
+              title: const Text('引用转发'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => XComposeMomentScreen(
+                      quoteMoment: moment,
+                      userId: userId,
+                      userName: userName,
+                      userAvatar: userAvatar,
+                    ),
+                  ),
+                ).then((_) => _loadData());
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
