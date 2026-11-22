@@ -348,6 +348,11 @@ class _LoginTabState extends State<_LoginTab> {
     final confirmCtrl = TextEditingController();
     final obscure = ValueNotifier<bool>(true);
     final obscure2 = ValueNotifier<bool>(true);
+    // 警示文字原来写死 Colors.orange[900]：亮色下没问题，暗色弹窗底是深色，
+    // 深橙字几乎看不见。按亮暗分别取浅/深橙，保证两边对比度都够。
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final warningTextColor =
+        isDark ? Colors.orange.shade200 : Colors.orange.shade900;
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -359,7 +364,7 @@ class _LoginTabState extends State<_LoginTab> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withOpacity(isDark ? 0.16 : 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -370,7 +375,7 @@ class _LoginTabState extends State<_LoginTab> {
                   Expanded(
                       child: Text('重置密码后需重新登录，本地数据不受影响。',
                           style: TextStyle(
-                              fontSize: 13, color: Colors.orange[900]))),
+                              fontSize: 13, color: warningTextColor))),
                 ],
               ),
             ),
