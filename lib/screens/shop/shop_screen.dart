@@ -6,6 +6,7 @@ import '../../models/shop_item.dart';
 import '../../models/chat_session.dart';
 import '../../repositories/local_storage_repository.dart';
 import 'order_tracking_screen.dart';
+import '../profile/wallet_screen.dart';
 import '../../models/shop_order.dart';
 
 import '../../utils/avatar_resolver.dart';
@@ -218,7 +219,18 @@ class _ShopScreenState extends State<ShopScreen>
           ),
           const Spacer(),
           TextButton.icon(
-            onPressed: () {},
+            // 原来是空回调 () {}，点了没反应；钱包页已存在，直接接通。
+            onPressed: () {
+              final authState = context.read<AuthBloc>().state;
+              if (authState is AuthAuthenticated) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WalletScreen(user: authState.user),
+                  ),
+                );
+              }
+            },
             icon: Icon(Icons.smart_toy_outlined, size: 18, color: cs.primary),
             label: Text('AI钱包', style: TextStyle(color: cs.primary)),
           ),
