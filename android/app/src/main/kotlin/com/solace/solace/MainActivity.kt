@@ -314,6 +314,85 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // ─── 无障碍可选模块 MethodChannel（默认关闭；只开 App 页面，绝不自动点击） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/accessibility"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isServiceEnabled" -> {
+                    try {
+                        val enabled = Settings.Secure.getString(
+                            contentResolver,
+                            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                        ) ?: ""
+                        val component = ComponentName(
+                            this,
+                            SolaceAccessibilityService::class.java
+                        ).flattenToString()
+                        result.success(enabled.contains(component))
+                    } catch (e: Exception) {
+                        result.error("ACCESSIBILITY_CHECK_FAILED", e.message, null)
+                    }
+                }
+                "openAccessibilitySettings" -> {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("FAILED", e.message, null)
+                    }
+                }
+                "openAppPage" -> {
+                    try {
+                        // 模块总闸：Dart 侧开关存在 FlutterSharedPreferences 里，
+                        // 关着就拒绝，连 Intent 也不发。
+                        val prefs = getSharedPreferences(
+                            "FlutterSharedPreferences", MODE_PRIVATE
+                        )
+                        val moduleEnabled = prefs.getBoolean(
+                            "flutter.accessibility_automation_enabled", false
+                        )
+                        if (!moduleEnabled) {
+                            result.error("MODULE_DISABLED", "无障碍模块未开启", null)
+                            return@setMethodCallHandler
+                        }
+                        val packageName = call.argument<String>("packageName")
+                            ?.trim() ?: ""
+                        val uri = call.argument<String>("uri")?.trim() ?: ""
+                        if (packageName.isBlank()) {
+                            result.error("BAD_ARGS", "App 包名为空", null)
+                            return@setMethodCallHandler
+                        }
+                        // 只打开目标页面，停在打开页即止：不读屏、不找节点、
+                        // 不调 performAction、不自动点任何按钮。
+                        val intent = if (uri.isNotBlank()) {
+                            Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                setPackage(packageName)
+                            }
+                        } else {
+                            packageManager.getLaunchIntentForPackage(packageName)
+                                ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        if (intent == null ||
+                            intent.resolveActivity(packageManager) == null
+                        ) {
+                            result.error("APP_NOT_FOUND", "找不到目标 App 或页面", null)
+                        } else {
+                            startActivity(intent)
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        result.error("OPEN_APP_FAILED", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // ─── 微信机器人前台保活 ───
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

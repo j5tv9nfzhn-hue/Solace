@@ -56,6 +56,19 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <!-- 无障碍可选模块（默认关闭；只开 App 页面，不读屏、不模拟点击） -->
+        <service
+            android:name=".SolaceAccessibilityService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/solace_accessibility_config" />
+        </service>
+
         <!-- 通知监听桥接服务（可选模块，默认关闭；用户在系统设置→通知访问里手动授予） -->
         <service
             android:name=".NotificationBridgeService"
