@@ -217,6 +217,21 @@ mixin AIServiceContextApi on AIServiceCleanSplitApi {
       });
     }
 
+    // 真实感上下文：以“系统上下文”身份注入（不是角色口吻），角色只收到
+    // 它再用自己的话说。总开关关闭、采集失败或 5 分钟缓存内无变化时，
+    // collectText 返回空串，不阻塞聊天；工具定义绝不进 prompt。
+    try {
+      final realityText = await _realityContext.collectText();
+      if (realityText.trim().isNotEmpty) {
+        messages.add({
+          'role': 'system',
+          'content': realityText,
+        });
+      }
+    } catch (_) {
+      // 真实感采集失败不阻塞聊天。
+    }
+
     if (isCompactContextModel && !_storage.isPureAiModeEnabled()) {
       messages.add({
         'role': 'system',

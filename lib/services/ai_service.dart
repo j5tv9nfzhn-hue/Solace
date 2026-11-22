@@ -20,6 +20,7 @@ import '../config/constants.dart';
 import 'memory_engine.dart';
 import 'emotion_engine.dart';
 import 'weather_service.dart';
+import 'reality_context_service.dart';
 import '../models/bt_agent_action.dart';
 import 'bing_cn_mcp_service.dart';
 import 'prompt_rewriter.dart';
@@ -147,6 +148,7 @@ abstract class _AIServiceCore {
   late final MemoryEngine _memoryEngine;
   late final EmotionEngine _emotionEngine;
   late final PromptBuilder _promptBuilder;
+  late final RealityContextService _realityContext;
   final BingCnMcpService _bingSearch = const BingCnMcpService();
 
   /// 最近一次请求的角色性别/名字（用于输出侧人称轻量纠错）
@@ -216,6 +218,7 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
       : super(storage, httpClient ?? http.Client()) {
     _memoryEngine = MemoryEngine(_storage);
     _emotionEngine = EmotionEngine(_storage);
+    _realityContext = RealityContextService(_storage);
     _promptBuilder = PromptBuilder(
         _storage, _memoryEngine, _emotionEngine, DialogueStrategy());
   }
