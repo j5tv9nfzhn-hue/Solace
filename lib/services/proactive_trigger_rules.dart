@@ -46,6 +46,19 @@ class ProactiveTriggerRule {
   /// 冷却时间（分钟），覆盖全局默认值
   final int? cooldownMinutes;
 
+  /// 时间窗口（当天分钟数）：命中任一窗口才触发；空 = 不限时间。
+  /// 仅时间规则用，消息规则留空。
+  final List<TimeWindow> timeWindows;
+
+  /// 最近 3 小时亮屏分钟下限：低于它不触发；null = 不看使用时长。
+  final int? minRecentScreenMinutes;
+
+  /// 只在深夜（23:00–06:00）触发。
+  final bool lateNightOnly;
+
+  /// 每日触发上限（默认 1 次），防反复打扰。
+  final int dailyCap;
+
   const ProactiveTriggerRule({
     required this.id,
     required this.name,
@@ -61,6 +74,10 @@ class ProactiveTriggerRule {
     this.argsTemplate = const {},
     this.priority = 'medium',
     this.cooldownMinutes,
+    this.timeWindows = const [],
+    this.minRecentScreenMinutes,
+    this.lateNightOnly = false,
+    this.dailyCap = 1,
   });
 
   /// 检查规则是否匹配当前上下文
@@ -143,6 +160,24 @@ class ProactiveTriggerRule {
             .replaceAll('{user_message}', userMessage),
       ),
     );
+  }
+}
+
+/// 当天时间窗口（分钟数，0–1439），支持跨零点（如 23:00–06:00）。
+class TimeWindow {
+  const TimeWindow(this.startMinute, this.endMinute);
+
+  /// 起点（含），当天分钟数。
+  final int startMinute;
+
+  /// 终点（不含），当天分钟数。
+  final int endMinute;
+
+  bool contains(int minuteOfDay) {
+    if (startMinute <= endMinute) {
+      return minuteOfDay >= startMinute && minuteOfDay < endMinute;
+    }
+    return minuteOfDay >= startMinute || minuteOfDay < endMinute;
   }
 }
 
@@ -272,6 +307,84 @@ class ProactiveTriggerRules {
       cooldownMinutes: 15,
     ),
   ];
+
+  /// 时间触发规则（与消息规则分开存放：消息规则的 matches() 无时间条件，
+  /// 若混进 builtinRules 会在每条消息上都误命中）。
+  ///
+  /// 三条规则都只注入上下文、不直接发消息；节流（开关/冷却/每日上限）
+  /// 由 ProactiveTimeTriggerState 在决策引擎快路径里执行。
+  static final List<ProactiveTriggerRule> builtinTimeRules = [
+    ProactiveTriggerRule(
+      id: 'time_meal',
+      name: '饭点问吃不吃',
+      description: '午饭/晚饭时段，问问用户吃不吃、想吃什么',
+      actionType: ProactiveActionType.proactiveTopic,
+      timeWindows: const [
+        TimeWindow(11 * 60 + 30, 13 * 60), // 11:30–13:00
+        TimeWindow(17 * 60 + 30, 19 * 60), // 17:30–19:00
+      ],
+      argsTemplate: {
+        'type': 'meal_check',
+        'trigger': '现在是饭点',
+      },
+      priority: 'medium',
+      cooldownMinutes: 240,
+      dailyCap: 1,
+    ),
+    ProactiveTriggerRule(
+      id: 'time_long_screen',
+      name: '玩手机久了提醒',
+      description: '最近 3 小时亮屏超过 90 分钟，提醒休息一下',
+      actionType: ProactiveActionType.proactiveTopic,
+      minRecentScreenMinutes: 90,
+      argsTemplate: {
+        'type': 'long_screen_rest',
+        'trigger': '用户最近 3 小时亮屏超过 90 分钟',
+      },
+      priority: 'medium',
+      cooldownMinutes: 240,
+      dailyCap: 2,
+    ),
+    ProactiveTriggerRule(
+      id: 'time_late_night',
+      name: '半夜还在亮屏催睡',
+      description: '深夜 23:00–06:00 仍在亮屏超过 10 分钟，温柔催睡',
+      actionType: ProactiveActionType.proactiveTopic,
+      lateNightOnly: true,
+      minRecentScreenMinutes: 10,
+      argsTemplate: {
+        'type': 'late_night_rest',
+        'trigger': '深夜用户还在亮屏',
+      },
+      priority: 'high',
+      cooldownMinutes: 240,
+      dailyCap: 1,
+    ),
+  ];
+
+  /// 按时间/使用时长匹配时间规则（不看消息内容）。
+  ///
+  /// [recentScreenMinutes] 为最近 3 小时亮屏总分钟；未授权使用情况访问
+  /// 时调用方传 0，带使用时长下限的规则自然不命中（降级为只看时间）。
+  static List<ProactiveTriggerRule> matchTimeBased({
+    required DateTime now,
+    required int recentScreenMinutes,
+  }) {
+    final minuteOfDay = now.hour * 60 + now.minute;
+    final isLateNight = now.hour >= 23 || now.hour < 6;
+    return builtinTimeRules.where((rule) {
+      if (rule.timeWindows.isNotEmpty &&
+          !rule.timeWindows.any((w) => w.contains(minuteOfDay))) {
+        return false;
+      }
+      if (rule.lateNightOnly && !isLateNight) return false;
+      if (rule.minRecentScreenMinutes != null &&
+          recentScreenMinutes < rule.minRecentScreenMinutes!) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
 
   /// 根据上下文匹配所有触发的规则（按优先级排序）
   static List<ProactiveTriggerRule> matchRules({
