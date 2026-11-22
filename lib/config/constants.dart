@@ -111,6 +111,9 @@ class PrefKeys {
   /// 限定剧情：节日/生日/纪念日当天，角色在 system prompt 里主动提起过节。
   /// 默认开启（只在当天注入一段提示，不弹窗、不推送、不打扰）。
   static const String limitedEventEnabled = 'limited_event_enabled';
+  /// 梦境日记：用户写给角色的脑洞剧情，JSON 列表（见 DreamDiaryEntry）。
+  /// 默认不分享给角色，逐条打开分享后才注入单聊 prompt。
+  static const String dreamDiaryEntries = 'dream_diary_entries'; (feat: 梦境日记（用户写给角色的脑洞剧情，角色能读到并回应）)
   static const String appUsageAwareness = 'app_usage_awareness';
 
   // ─── 生活自动化：时间触发开关（默认开，设置页可关）───

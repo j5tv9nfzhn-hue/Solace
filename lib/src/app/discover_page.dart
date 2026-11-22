@@ -86,6 +86,8 @@ class _DiscoverPageState extends State<_DiscoverPage>
           cs, tt),
       _tile(context, Icons.celebration_outlined, '限定剧情', '节日限时剧情，错过等明年',
           '/limited_events', cs, tt),
+      _tile(context, Icons.nightlight_outlined, '梦境日记', '写给TA的脑洞剧情',
+          '/dream_diary', cs, tt),
       _tile(context, Icons.bookmark_rounded, '收藏消息', '回顾收藏的聊天记录', '/bookmarks',
           cs, tt),
       _tile(context, Icons.auto_fix_high, '塔罗牌', '每日占卜', '/tarot', cs, tt),

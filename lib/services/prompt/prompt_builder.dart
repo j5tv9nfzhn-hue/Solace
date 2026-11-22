@@ -9,6 +9,7 @@ import '../../config/constants.dart';
 import '../memory_engine.dart';
 import '../emotion_engine.dart';
 import '../limited_event_service.dart';
+import '../dream_diary_service.dart';
 import '../dialogue_strategy.dart';
 import '../prompt_rewriter.dart';
 import '../moment_context_service.dart';
@@ -1074,6 +1075,23 @@ class PromptBuilder {
       }
     } catch (e) {
       debugPrint('AIService: 限定剧情注入失败 — $e');
+    }
+
+// 梦境日记：用户写给角色的脑洞剧情，只注入用户逐条打开“分享给TA”的条目
+//（默认不分享）。没分享过的日记角色读不到，保护用户隐私。
+    try {
+      if (!pureAiMode) {
+        final dreamBlock =
+            await DreamDiaryService.buildPromptBlockForCharacter(
+          _storage,
+          character.id,
+        );
+        if (dreamBlock.isNotEmpty) {
+          buffer.writeln(dreamBlock);
+        }
+      }
+    } catch (e) {
+      debugPrint('AIService: 梦境日记注入失败 — $e');
     }
 
 // 朋友圈/动态闭环：注入「角色发过/评论过/看到过的动态」，让角色知道自己做过什么

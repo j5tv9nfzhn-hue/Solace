@@ -503,6 +503,8 @@ class _MainShellState extends State<_MainShell> with WidgetsBindingObserver {
         return const AIDiaryScreen();
       case '/limited_events':
         return const LimitedEventScreen();
+      case '/dream_diary':
+        return const DreamDiaryScreen();
       case '/bookmarks':
         return const BookmarkListScreen();
       case '/settings':
