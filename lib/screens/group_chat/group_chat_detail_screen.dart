@@ -898,7 +898,6 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
                       color: colorScheme.onSurfaceVariant),
                   onPressed: _pickAndAttachImages,
                   tooltip: '添加图片',
-                  visualDensity: VisualDensity.compact,
                 ),
                 Expanded(
                   child: TextField(
@@ -924,33 +923,37 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
                 ),
               ),
                 const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: _sendCurrentMessage,
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withValues(alpha: 0.78),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.28),
-                          blurRadius: 9,
-                          offset: const Offset(0, 3),
+                Semantics(
+                  label: '发送',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: _sendCurrentMessage,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withValues(alpha: 0.78),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.arrow_upward_rounded,
-                      color: Colors.white,
-                      size: 21,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.28),
+                            blurRadius: 9,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 21,
+                      ),
                     ),
                   ),
                 ),

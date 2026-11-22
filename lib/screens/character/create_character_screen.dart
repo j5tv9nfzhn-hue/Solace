@@ -952,10 +952,9 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
                 ),
               ),
               IconButton(
+                tooltip: '删除这条示例',
                 icon: Icon(Icons.close, size: 18, color: colorScheme.error),
                 onPressed: () => _removeDialogueExample(index),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
             ],
           ),
