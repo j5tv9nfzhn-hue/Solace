@@ -250,6 +250,70 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // ─── 通知监听桥接 MethodChannel（可选模块；系统授权只能用户手动开） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/notification_bridge"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isListenerEnabled" -> {
+                    try {
+                        val enabled = Settings.Secure.getString(
+                            contentResolver,
+                            "enabled_notification_listeners"
+                        ) ?: ""
+                        val component = ComponentName(
+                            this,
+                            NotificationBridgeService::class.java
+                        ).flattenToString()
+                        result.success(enabled.contains(component))
+                    } catch (e: Exception) {
+                        result.error("LISTENER_CHECK_FAILED", e.message, null)
+                    }
+                }
+                "openListenerSettings" -> {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("FAILED", e.message, null)
+                    }
+                }
+                "getRecentNotifications" -> {
+                    try {
+                        result.success(NotificationBridgeService.snapshotJson())
+                    } catch (e: Exception) {
+                        result.error("LISTENER_FAILED", e.message, null)
+                    }
+                }
+                "replyToNotification" -> {
+                    try {
+                        val key = call.argument<String>("key") ?: ""
+                        val text = call.argument<String>("text") ?: ""
+                        if (key.isBlank() || text.isBlank()) {
+                            result.error("BAD_ARGS", "通知 key 或回复内容为空", null)
+                        } else {
+                            result.success(
+                                NotificationBridgeService.reply(key, text)
+                            )
+                        }
+                    } catch (e: Exception) {
+                        result.error("REPLY_FAILED", e.message, null)
+                    }
+                }
+                "toggleMediaPlayback" -> {
+                    try {
+                        result.success(NotificationBridgeService.toggleMedia())
+                    } catch (e: Exception) {
+                        result.error("MEDIA_FAILED", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // ─── 微信机器人前台保活 ───
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

@@ -417,6 +417,7 @@ class MethodChannels {
   static const String background = 'com.solace.background';
   static const String settings = 'com.solace.solace/settings';
   static const String notification = 'com.solace.solace/notification';
+  static const String notificationBridge = 'com.solace.solace/notification_bridge';
   static const String accessibility = 'com.solace.solace/accessibility';
   static const String screenshot = 'com.solace.solace/screenshot';
 }

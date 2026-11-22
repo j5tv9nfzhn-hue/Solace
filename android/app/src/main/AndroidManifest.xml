@@ -55,6 +55,16 @@
             android:name=".WechatBotForegroundService"
             android:foregroundServiceType="dataSync"
             android:exported="false" />
+
+        <!-- 通知监听桥接服务（可选模块，默认关闭；用户在系统设置→通知访问里手动授予） -->
+        <service
+            android:name=".NotificationBridgeService"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 
     <!-- ─── 权限声明 ─── -->
