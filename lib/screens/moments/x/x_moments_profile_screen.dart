@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,8 +7,11 @@ import '../../../blocs/auth/auth_bloc.dart';
 import '../../../config/moments_theme.dart';
 import '../../../models/moment.dart';
 import '../../../models/ai_character.dart';
+import '../../../models/chat_session.dart';
 import '../../../models/user.dart';
 import '../../../repositories/local_storage_repository.dart';
+import '../../../services/diary_helper.dart';
+import '../../chat/chat_detail_screen.dart';
 import '../../../widgets/moments/circular_avatar.dart';
 import '../../../widgets/moments/moment_card.dart';
 import 'x_edit_profile_screen.dart';
@@ -247,7 +251,7 @@ class _XMomentsProfileScreenState extends State<XMomentsProfileScreen>
                   bottom: 8,
                   child: _isAI
                       ? FilledButton(
-                          onPressed: () {},
+                          onPressed: _startChat,
                           style: FilledButton.styleFrom(
                             backgroundColor: MomentsTheme.textPrimary(context),
                             foregroundColor: MomentsTheme.background(context),
@@ -273,7 +277,14 @@ class _XMomentsProfileScreenState extends State<XMomentsProfileScreen>
                                       TextStyle(fontWeight: FontWeight.w800)),
                             )
                           : OutlinedButton(
-                              onPressed: () {},
+                              // 全站还没有关注关系后端，点了先给明确反馈，
+                              // 不要让按钮看起来坏了。
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('关注功能即将上线，敬请期待')),
+                                );
+                              },
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
                                     color: MomentsTheme.divider(context)),
@@ -396,6 +407,64 @@ class _XMomentsProfileScreenState extends State<XMomentsProfileScreen>
         ),
       ],
     );
+  }
+
+  /// 给 AI 角色发消息：复用聊天列表的建会话逻辑——已有会话直接进，
+  /// 没有就新建一个会话再进；聊完回来后让角色自然写日记。
+  Future<void> _startChat() async {
+    final character = _character;
+    if (character == null) return;
+    final storage = context.read<LocalStorageRepository>();
+    final authState = context.read<AuthBloc>().state;
+    final userId =
+        authState is AuthAuthenticated ? authState.user.id : 'local_user';
+
+    final sessions = await storage.getChatSessions(userId);
+    ChatSession? existingSession;
+    for (final s in sessions) {
+      if (s.aiCharacterId == character.id) {
+        existingSession = s;
+        break;
+      }
+    }
+
+    late final ChatSession targetSession;
+    if (existingSession != null) {
+      targetSession = existingSession;
+    } else {
+      final now = DateTime.now();
+      targetSession = ChatSession(
+        id: 'chat_${character.id}_$userId',
+        userId: userId,
+        aiCharacterId: character.id,
+        aiCharacterName: character.name,
+        aiCharacterAvatar: character.avatarUrl,
+        lastMessage: '',
+        lastMessageTime: now,
+        unreadCount: 0,
+        intimacyLevel: 0,
+        dailyIntimacyCount: 0,
+        lastIntimacyDate: now.toIso8601String().substring(0, 10),
+        createdAt: now,
+        updatedAt: now,
+      );
+      await storage.saveChatSession(targetSession);
+    }
+
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatDetailScreen(session: targetSession),
+      ),
+    );
+    unawaited(DiaryHelper.tryWriteAfterChat(
+      storage: storage,
+      characterId: character.id,
+      characterName: character.name,
+      characterAvatar: character.avatarUrl,
+      sessionId: targetSession.id,
+    ));
   }
 
   Future<void> _openEditProfile() async {
