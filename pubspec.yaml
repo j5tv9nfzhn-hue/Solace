@@ -46,13 +46,6 @@ dependencies:
   # 微信 iLink Bot：扫码登录二维码渲染
   qr_flutter: ^4.1.0
 
-  # 本地离线语音（TTS 走 MiMo 云端 API；STT/VAD 用 sherpa-onnx 本地模型）
-  # STT/VAD 模型文件不内置，用户手动导入（见 VoiceModelManager）
-  sherpa_onnx: 1.13.3
-  archive: ^3.6.1
-  audioplayers: ^6.8.1
-  record: ^6.2.1
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -80,7 +73,6 @@ flutter:
     - assets/avatar_author.png
     - assets/phone_icons/
     - assets/phone_icons/generated/
-    - assets/voice/
   fonts:
     - family: TwitterIcon
       fonts:

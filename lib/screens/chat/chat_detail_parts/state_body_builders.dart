@@ -1,7 +1,7 @@
 // 背景/空态构建（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateBodyBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs, _StateAppBarBuilders, _StateListInputBuilders {
+mixin _StateBodyBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs, _StateAppBarBuilders, _StateListInputBuilders {
   Widget _buildBody(ColorScheme colorScheme) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final content = Column(
@@ -332,24 +332,20 @@ mixin _StateBodyBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore,
 
     final hasCustomBg = _currentSession?.backgroundImage != null &&
         _currentSession!.backgroundImage!.isNotEmpty;
-    // 暮玫深色 / 软纸浅色：非微信时总是铺氛围底（角色色微调 + 主题光晕）
-    if (hasCustomBg || !_isWeChatStyle) {
-      return Stack(
-        children: [
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: hasCustomBg
+              ? _buildBackgroundImage(colorScheme)
+              : _buildAmbientBackground(colorScheme),
+        ),
+        if (hasCustomBg && isDark)
           Positioned.fill(
-            child: hasCustomBg
-                ? _buildBackgroundImage(colorScheme)
-                : _buildAmbientBackground(colorScheme),
+            child: Container(color: Colors.black.withOpacity(0.25)),
           ),
-          if (hasCustomBg && isDark)
-            Positioned.fill(
-              child: Container(color: Colors.black.withOpacity(0.25)),
-            ),
-          content,
-        ],
-      );
-    }
-    return content;
+        content,
+      ],
+    );
   }
 
 
@@ -574,14 +570,6 @@ mixin _StateBodyBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore,
 
   /// 暮玫深色 / 软纸浅色：全角色统一主题氛围底（不再叠角色色）。
   Widget _buildAmbientBackground(ColorScheme colorScheme) {
-    // 微信风格：纯色底
-    if (_isWeChatStyle) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      return Container(
-          color: isDark
-              ? WeChatColors.darkPageBackground
-              : WeChatColors.chatBackground);
-    }
     final colors = ChatPalette.ambientGradient(context);
     return DecoratedBox(
       decoration: BoxDecoration(

@@ -13,8 +13,6 @@ class _StreamingBubble extends StatelessWidget {
   final Color? dialogueColorLight;
   final Color? dialogueColorDark;
 
-  /// 微信视觉风格：白色/深灰气泡、小圆角。
-  final bool wechatStyle;
 
   const _StreamingBubble({
     required this.text,
@@ -25,7 +23,6 @@ class _StreamingBubble extends StatelessWidget {
     this.hasActionBracket = false,
     this.dialogueColorLight,
     this.dialogueColorDark,
-    this.wechatStyle = false,
   });
 
   @override
@@ -66,23 +63,14 @@ class _StreamingBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                // 18.3.0 沉浸式：深色下与普通 AI 气泡同款半透明；
-                // 微信风格：白色/#2C2C2C 实色小圆角。
-                color: wechatStyle
-                    ? (isDarkMode
-                        ? WeChatColors.darkBubbleOther
-                        : WeChatColors.bubbleOther)
-                    : isDarkMode
-                        ? _MessageBubble._bubbleDark
-                        : colorScheme.surfaceContainerHighest,
-                border: wechatStyle
-                    ? null
-                    : isDarkMode
-                        ? Border.all(
-                            color: _MessageBubble._bubbleDarkBorder)
-                        : null,
-                borderRadius:
-                    BorderRadius.circular(wechatStyle ? 6.0 : 16),
+                // 18.3.0 沉浸式：深色下与普通 AI 气泡同款半透明。
+                color: isDarkMode
+                    ? _MessageBubble._bubbleDark
+                    : colorScheme.surfaceContainerHighest,
+                border: isDarkMode
+                    ? Border.all(color: _MessageBubble._bubbleDarkBorder)
+                    : null,
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

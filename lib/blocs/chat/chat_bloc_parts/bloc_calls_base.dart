@@ -16,67 +16,6 @@ mixin _BlocCallsBase on Bloc<ChatEvent, ChatState>, ChatBlocUtils, ChatBlocIntim
   String _stripSystemDirective(String text) => stripSystemDirective(text);
 
 
-  /// 追加一条消息（通话记录等系统消息）并刷新消息列表。
-  /// 供 VoiceCallController 等非事件入口使用。
-  Future<void> appendSystemMessage(ChatMessage message) async {
-    try {
-      await _storage.saveChatMessage(message);
-      if (isClosed) return;
-      add(ChatLoadMessages(message.chatId));
-    } catch (e) {
-      LogService.instance
-          .w('Chat', 'appendSystemMessage 失败: $e', chatId: message.chatId);
-    }
-  }
-
-
-  /// 静默化语音通话：删除 [since] 之后写入的用户/AI 消息并刷新列表。
-  /// 通话内容不进聊天页（记忆已由 extractCallMemories 静默入库），
-  /// 聊天页只保留通话记录系统消息与时间。
-  Future<void> clearCallMessages({
-    required String chatId,
-    required DateTime since,
-  }) async {
-    try {
-      await _storage.deleteChatMessagesSince(chatId, since);
-      if (isClosed) return;
-      add(ChatLoadMessages(chatId));
-    } catch (e) {
-      LogService.instance
-          .w('Chat', 'clearCallMessages 失败: $e', chatId: chatId);
-    }
-  }
-
-
-  /// 通话结束后强制提取一次通话记忆（不走降频，保证内容入库）。
-  /// 传入 [recentMessages] 为通话内的用户/AI 消息。
-  Future<void> extractCallMemories({
-    required String chatId,
-    required List<ChatMessage> recentMessages,
-  }) async {
-    try {
-      final safeRecent = recentMessages
-          .where(
-              (m) => !(m.isFromAI && MessageSanitizer.isAIRefusal(m.content)))
-          .toList();
-      if (safeRecent.length < 2) return;
-      final session = await _storage.getChatSession(chatId);
-      if (session == null) return;
-      final character = await _storage.getAICharacter(session.aiCharacterId);
-      if (character == null) return;
-      await _memoryEngine.extractMemory(
-        character: character,
-        userId: session.userId,
-        recentMessages: safeRecent,
-        characterName: character.name,
-      );
-      LogService.instance
-          .i('Memory', '通话记忆提取完成 (msgs=${safeRecent.length})', chatId: chatId);
-    } catch (e) {
-      LogService.instance.w('Memory', '通话记忆提取失败: $e', chatId: chatId);
-    }
-  }
-
   // ═══════════════════════════════════════════════════════
   // 桥接层辅助方法（渐进迁移：优先用新适配器，回退到旧服务）
   // ═══════════════════════════════════════════════════════

@@ -1,7 +1,7 @@
 // 发送/贴图/图片输入（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateSendInput on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice {
+mixin _StateSendInput on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory {
   Future<void> _initialize() async {
     try {
       await _loadSessionFromDatabase();

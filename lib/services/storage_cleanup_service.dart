@@ -307,15 +307,9 @@ class StorageCleanupService {
       final vmRoot = Directory(p.join(docs.path, 'voice_models'));
       if (await vmRoot.exists()) {
         final voiceLabels = <String, (String, String)>{
-          'sensevoice': (
-            '语音识别模型 SenseVoice',
-            '本地 STT；清理后需重新导入才能离线听写'
-          ),
-          'silero_vad': ('语音端点检测 VAD', '本地 VAD 小模型，可重新导入'),
-          'zipvoice': (
-            '旧版本地 TTS 模型',
-            'TTS 已云端化，此目录一般可安全删除'
-          ),
+          'sensevoice': ('语音识别模型 SenseVoice', '本地 STT 模型残留文件'),
+          'silero_vad': ('语音端点检测 VAD', '本地 VAD 小模型残留文件'),
+          'zipvoice': ('旧版本地 TTS 模型', '语音功能已移除，可安全删除'),
         };
         var vmTotal = 0;
         await for (final e in vmRoot.list(followLinks: false)) {

@@ -1,7 +1,7 @@
 // 导航与更多面板（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateNavDialogs on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions {
+mixin _StateNavDialogs on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions {
   Future<void> _openVirtualPhone(BuildContext context) async {
     final storage = RepositoryProvider.of<LocalStorageRepository>(context);
     final character =
@@ -148,18 +148,16 @@ mixin _StateNavDialogs on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _
                   },
                 ),
                 const SizedBox(width: 16),
-                if (_isWeChatStyle) ...[
-                  _MoreActionItem(
-                    icon: Icons.monetization_on,
-                    label: '红包',
-                    color: const Color(0xFFE06A4E),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showRedPacketDialog();
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                ],
+                _MoreActionItem(
+                  icon: Icons.monetization_on,
+                  label: '红包',
+                  color: const Color(0xFFE06A4E),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showRedPacketDialog();
+                  },
+                ),
+                const SizedBox(width: 16),
                 _MoreActionItem(
                   icon: Icons.storefront,
                   label: '商店',
@@ -207,24 +205,6 @@ mixin _StateNavDialogs on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _
               onTap: () {
                 Navigator.pop(ctx);
                 _pickAndAttachImages();
-              },
-            ),
-            const SizedBox(height: 16),
-            _MoreActionItem(
-              icon: Icons.record_voice_over_outlined,
-              label: '音色克隆',
-              color: const Color(0xFF10B981),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => VoiceCloneScreen(
-                      characterId: widget.session.aiCharacterId,
-                      characterName: widget.session.aiCharacterName,
-                    ),
-                  ),
-                );
               },
             ),
             const SizedBox(height: 16),

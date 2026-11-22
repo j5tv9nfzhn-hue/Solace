@@ -1412,62 +1412,6 @@ mixin LocalStorageRepositoryChatMessagesApi on _LocalStorageRepositoryCore {
     }
   }
 
-  /// 删除某会话在 [since] 之后写入的非系统消息（语音通话静默化用：
-  /// 挂断后抹掉通话期间的用户/AI 消息，聊天页只保留通话记录系统消息）。
-  Future<void> deleteChatMessagesSince(String chatId, DateTime since) async {
-    try {
-      if (_isWeb) {
-        final ids = _prefs?.getStringList('message_ids_$chatId') ?? [];
-        final kept = <String>[];
-        for (final id in ids) {
-          final data = _prefs?.getString('message_$id');
-          final map = data == null
-              ? null
-              : jsonDecode(data) as Map<String, dynamic>;
-          final isSystem = map?['isSystem'] == true || map?['isSystem'] == 1;
-          final created =
-              DateTime.tryParse(map?['createdAt'] as String? ?? '');
-          if (isSystem || (created != null && created.isBefore(since))) {
-            kept.add(id);
-          } else {
-            await _prefs?.remove('message_$id');
-          }
-        }
-        await _prefs?.setStringList('message_ids_$chatId', kept);
-      } else {
-        final db = await _ensureDb();
-        final maps = await db.query(
-          'chat_messages',
-          where: 'chatId = ? AND isSystem = 0',
-          whereArgs: [chatId],
-        );
-        final ids = <String>[];
-        for (final map in maps) {
-          final created =
-              DateTime.tryParse(map['createdAt'] as String? ?? '');
-          if (created != null && !created.isBefore(since)) {
-            ids.add(map['id'] as String);
-          }
-        }
-        if (ids.isEmpty) return;
-        await db.transaction((txn) async {
-          for (final id in ids) {
-            await txn.delete(
-              'chat_messages',
-              where: 'id = ?',
-              whereArgs: [id],
-            );
-          }
-        });
-      }
-      debugPrint('[DBG] deleteChatMessagesSince: chatId=$chatId '
-          'since=$since done');
-    } catch (e) {
-      LogService.instance.w('Storage', 'deleteChatMessagesSince 失败: $e',
-          chatId: chatId);
-    }
-  }
-
   /// Web 模式下取全部会话 id。
   ///
   /// ★ 曾经写错成 `_prefs.getStringList('chat_session_ids')`，而

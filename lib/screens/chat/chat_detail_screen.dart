@@ -22,9 +22,6 @@ import '../../repositories/local_storage_repository.dart';
 import '../../services/ai_service.dart';
 import '../../services/ai_status_service.dart';
 import '../virtual_phone/virtual_phone_screen.dart';
-import '../voice/voice_call_screen.dart';
-import '../../services/voice/mimo_tts_service.dart';
-import '../../services/voice/mimo_director.dart';
 import '../../models/virtual_phone/virtual_phone.dart';
 import '../../services/virtual_phone_generator.dart';
 import '../../utils/message_sanitizer.dart';
@@ -64,14 +61,6 @@ import '../../models/character_emotion.dart';
 import '../moments/moments_screen.dart';
 import 'chat_settings_screen.dart';
 
-import '../../services/voice/voice_model_manager.dart';
-import '../../services/voice/local_tts_service.dart';
-import '../../services/voice/local_stt_service.dart';
-import '../../services/voice/voice_recorder_service.dart';
-import '../../services/voice/voice_player_service.dart';
-import '../../services/voice/voice_profile_store.dart';
-import '../../services/permission_service.dart';
-import '../voice/voice_clone_screen.dart';
 import '../character/v2/character_editor_screen.dart';
 import '../memory/memory_screen.dart';
 import '../life/life_log_screen.dart';
@@ -80,7 +69,6 @@ part 'chat_detail_parts/state_core.dart';
 part 'chat_detail_parts/state_load_core.dart';
 part 'chat_detail_parts/state_selection.dart';
 part 'chat_detail_parts/state_side_story.dart';
-part 'chat_detail_parts/state_voice.dart';
 part 'chat_detail_parts/state_send_input.dart';
 part 'chat_detail_parts/state_money_dialogs.dart';
 part 'chat_detail_parts/state_search.dart';
@@ -112,7 +100,7 @@ class ChatDetailScreen extends StatefulWidget {
 }
 
 class _ChatDetailScreenState extends State<ChatDetailScreen>
-    with _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs, _StateAppBarBuilders, _StateListInputBuilders, _StateBodyBuilders {
+    with _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs, _StateAppBarBuilders, _StateListInputBuilders, _StateBodyBuilders {
 
   @override
   Widget build(BuildContext context) {
@@ -139,12 +127,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
         value: _chatBloc,
         child: Scaffold(
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? (_isWeChatStyle
-                  ? WeChatColors.darkPageBackground
-                  : ImmersiveColors.background)
-              : (_isWeChatStyle
-                  ? WeChatColors.chatBackground
-                  : SoftPaperColors.background),
+              ? ImmersiveColors.background
+              : SoftPaperColors.background,
           appBar: _selectionMode
               ? _buildSelectionAppBar(colorScheme)
               : _isSearching
@@ -208,11 +192,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     _isAiTypingNotifier.dispose();
     _canSendNotifier.dispose();
     _showNewMessageBannerNotifier.dispose();
-
-    // 本地语音资源释放
-    _voiceRecorder.dispose();
-    _voicePlayer.dispose();
-
     // 移除模式切换监听
     if (_onModeSettingsChanged != null && _modeSettingsStorage != null) {
       _modeSettingsStorage!.modeSettingsNotifier

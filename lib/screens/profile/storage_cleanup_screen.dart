@@ -110,8 +110,8 @@ class _StorageCleanupScreenState extends State<StorageCleanupScreen>
     final bytes = _selectedBytes(null);
 
     final warnings = <String>[];
-    if (_selected.any((k) => k.startsWith('voice_model:sensevoice'))) {
-      warnings.add('将删除本地语音识别模型，离线听写需重新导入');
+    if (_selected.any((k) => k.startsWith('voice_model:'))) {
+      warnings.add('将删除本地语音模型残留文件');
     }
     if (_selected.any((k) => k == 'dir_chat_images' || k == 'dir_backup_files')) {
       warnings.add('聊天图片/备份还原附件将被删除，界面里对应图可能无法显示');

@@ -295,17 +295,9 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    var isWeChat = false;
-    try {
-      isWeChat = context.read<ThemeBloc>().state.isWeChat;
-    } catch (_) {
-      // 单元测试可能未挂 ThemeBloc
-    }
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: isWeChat
-          ? colorScheme.surface
-          : ChatPalette.scaffoldBackground(context),
+      backgroundColor: ChatPalette.scaffoldBackground(context),
       appBar: _selectionMode
           ? _buildSelectionAppBar(colorScheme)
           : AppBar(
@@ -398,7 +390,6 @@ class _GroupChatDetailScreenState extends State<GroupChatDetailScreen> {
             child: Stack(
               children: [
                 // 统一主题氛围底（暮玫/软纸），与单聊一致
-                if (!isWeChat)
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(

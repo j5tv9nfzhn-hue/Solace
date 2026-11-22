@@ -66,15 +66,6 @@ class _MessageBubble extends StatelessWidget {
   /// 小说模式对白颜色（暗色主题）。null 时使用默认蓝色。
   final Color? dialogueColorDark;
 
-  /// AI 文本消息的「播放语音」回调（null 则不显示按钮）。
-  final VoidCallback? onPlayVoice;
-
-  /// 该消息是否正在合成/播放语音（用于按钮态）。
-  final bool voiceBusy;
-
-  /// 微信风格：绿/白气泡、无描边、小圆角。
-  final bool wechatStyle;
-
   /// 转账/红包卡片点击回调（领取/拆包由上层 ChatBloc 处理）。
   final VoidCallback? onMoneyTap;
 
@@ -89,9 +80,6 @@ class _MessageBubble extends StatelessWidget {
     this.novelMode = false,
     this.dialogueColorLight,
     this.dialogueColorDark,
-    this.onPlayVoice,
-    this.voiceBusy = false,
-    this.wechatStyle = false,
     this.onMoneyTap,
   });
 
@@ -231,40 +219,19 @@ class _MessageBubble extends StatelessWidget {
     final isMoneyMsg = message.type == MessageType.transfer ||
         message.type == MessageType.redPacket;
     final brightness = Theme.of(context).brightness;
-    // 微信风格：自己=官方绿 #95EC69，对方=白/#2C2C2C，黑字/深字
-    final userBubbleColor = wechatStyle
-        ? WeChatColors.bubbleMine
-        : brightness == Brightness.dark
-            ? _douyinBlueDark
-            : _douyinBlue;
-    final aiBubbleColor = wechatStyle
-        ? (brightness == Brightness.dark
-            ? WeChatColors.darkBubbleOther
-            : WeChatColors.bubbleOther)
-        : brightness == Brightness.dark
-            ? _bubbleDark
-            : _bubbleLight;
-    final userTextColor = wechatStyle
-        ? (brightness == Brightness.dark
-            ? WeChatColors.darkBubbleMineText
-            : WeChatColors.bubbleMineText)
-        : _textOnBlue;
-    final aiTextColor = wechatStyle
-        ? (brightness == Brightness.dark
-            ? WeChatColors.darkBubbleOtherText
-            : WeChatColors.bubbleOtherText)
-        : brightness == Brightness.dark
-            ? _textOnDark
-            : _textOnWhite;
+    final userBubbleColor =
+        brightness == Brightness.dark ? _douyinBlueDark : _douyinBlue;
+    final aiBubbleColor =
+        brightness == Brightness.dark ? _bubbleDark : _bubbleLight;
+    final userTextColor = _textOnBlue;
+    final aiTextColor =
+        brightness == Brightness.dark ? _textOnDark : _textOnWhite;
     final displayText = MessageSanitizer.removeRepeatedContent(message.content);
     final webSearchTrace = message.metadata?['webSearchTrace'];
 
     // 系统消息居中显示（如通话记录）
     if (message.isSystem) {
       // 通话记录消息：专用卡片（时长 + 发起人）
-      if (message.metadata?['type'] == 'voice_call') {
-        return _buildVoiceCallRecord(message);
-      }
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: _hPad),
         child: Center(
@@ -469,27 +436,19 @@ class _MessageBubble extends StatelessWidget {
                   Flexible(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: wechatStyle
-                            ? MediaQuery.of(context).size.width *
-                                WeChatDimens.bubbleMaxWidthRatio
-                            : double.infinity,
+                        maxWidth: double.infinity,
                       ),
                       child: Container(
-                      padding: wechatStyle
-                          ? const EdgeInsets.symmetric(
-                              horizontal: WeChatDimens.bubblePadH,
-                              vertical: WeChatDimens.bubblePadV)
-                          : const EdgeInsets.symmetric(
-                              horizontal: 17, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 17, vertical: 15),
                       decoration: BoxDecoration(
                         color: isRecalled
                             ? (brightness == Brightness.dark
                                 ? _bubbleDark
                                 : const Color(0xFFF0F0F0))
                             : (isAI ? aiBubbleColor : userBubbleColor),
-                        borderRadius: BorderRadius.circular(
-                            wechatStyle ? 6.0 : _bubbleRadius),
-                        border: isAI && !isRecalled && !wechatStyle
+                        borderRadius: BorderRadius.circular(_bubbleRadius),
+                        border: isAI && !isRecalled
                             ? Border.all(
                                 color: brightness == Brightness.dark
                                     ? _bubbleDarkBorder
@@ -593,9 +552,8 @@ class _MessageBubble extends StatelessWidget {
                                   : (isAI ? aiTextColor : userTextColor);
                               final baseStyle = TextStyle(
                                 color: baseColor,
-                                fontSize:
-                                    wechatStyle ? WeChatDimens.bubbleTextSize : 15,
-                                height: wechatStyle ? 1.32 : 1.4,
+                                fontSize: 15,
+                                height: 1.4,
                                 fontStyle: isRecalled
                                     ? FontStyle.italic
                                     : FontStyle.normal,
@@ -659,37 +617,12 @@ class _MessageBubble extends StatelessWidget {
                 Text(
                   DateFormat('HH:mm').format(message.createdAt),
                   style: TextStyle(
-                    fontSize: wechatStyle ? WeChatDimens.timestampSize : 11,
+                    fontSize: 11,
                     color: isRecalled
                         ? colorScheme.onSurfaceVariant.withOpacity(0.5)
                         : colorScheme.onSurface.withOpacity(0.4),
                   ),
                 ),
-                if (isAI &&
-                    onPlayVoice != null &&
-                    !isRecalled &&
-                    message.type != MessageType.image &&
-                    message.type != MessageType.sticker &&
-                    displayText.trim().isNotEmpty) ...[
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: voiceBusy ? null : onPlayVoice,
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: voiceBusy
-                          ? CircularProgressIndicator(
-                              strokeWidth: 1.5,
-                              color: colorScheme.onSurface.withOpacity(0.5),
-                            )
-                          : Icon(
-                              Icons.volume_up_outlined,
-                              size: 15,
-                              color: colorScheme.onSurface.withOpacity(0.5),
-                            ),
-                    ),
-                  ),
-                ],
                 if (!isAI) ...[
                   const SizedBox(width: 4),
                   MessageStatusIndicator(
@@ -850,13 +783,6 @@ class _MessageBubble extends StatelessWidget {
 
   Widget _buildAvatar({required bool isAI}) {
     final avatarUrl = isAI ? aiAvatarUrl : userAvatarUrl;
-    if (wechatStyle) {
-      return WeChatAvatar(
-        imageUrl: avatarUrl,
-        size: WeChatDimens.chatAvatarSize,
-        fallbackText: isAI ? aiName : '我',
-      );
-    }
     return Container(
       width: _avatarSize,
       height: _avatarSize,
@@ -894,68 +820,5 @@ class _MessageBubble extends StatelessWidget {
         color: isAI ? const Color(0xFF9C27B0) : const Color(0xFF1A73E8),
       ),
     );
-  }
-
-  /// 通话记录卡片：居中展示时长 + 发起人 + 通话时间。
-  Widget _buildVoiceCallRecord(ChatMessage message) {
-    final meta = message.metadata ?? const {};
-    final durationSec = (meta['callDurationSec'] as num?)?.toInt() ?? 0;
-    final initiatedBy = meta['initiatedBy'] as String? ?? 'user';
-    final recordAiName = meta['aiName'] as String? ?? aiName;
-    final initiatorText =
-        initiatedBy == 'ai' ? '$recordAiName 发起的通话' : '你发起的通话';
-    final timeText = DateFormat('MM-dd HH:mm').format(message.createdAt);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: _hPad),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.call_outlined,
-                size: 16,
-                color: Colors.grey.shade500,
-              ),
-              const SizedBox(width: 8),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '语音通话 ${_formatCallDuration(durationSec)}',
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$initiatorText · $timeText',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _formatCallDuration(int sec) {
-    if (sec < 60) return '$sec秒';
-    final m = sec ~/ 60;
-    final s = sec % 60;
-    return s > 0 ? '$m分$s秒' : '$m分钟';
   }
 }

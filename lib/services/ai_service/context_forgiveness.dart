@@ -265,9 +265,7 @@ mixin AIServiceContextApi on AIServiceCleanSplitApi {
       });
     }
 
-    final historyContextLimit = isCompactContextModel
-        ? Limit.chatHistoryContextCompact
-        : Limit.chatHistoryContext;
+    final historyContextLimit = _historyContextLimit(isCompactContextModel);
     // 先过滤无效消息，再截最近 N 条，避免 hidden/系统消息挤占上下文配额
     final usableHistory = chatHistory.where((m) {
       if (m.isHidden || m.isGhost || m.isSystem) return false;

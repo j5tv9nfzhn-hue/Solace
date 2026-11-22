@@ -10,12 +10,10 @@ part 'theme_state.dart';
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final LocalStorageRepository _storage;
   static const String _themeKey = PrefKeys.themeMode;
-  static const String _visualStyleKey = PrefKeys.visualStyle;
 
   ThemeBloc(this._storage) : super(const ThemeState(ThemeMode.system)) {
     on<ThemeInitialized>(_onThemeInitialized);
     on<ThemeChanged>(_onThemeChanged);
-    on<VisualStyleChanged>(_onVisualStyleChanged);
 
     // 监听 repo 层的主题变更通知（来自 BT Agent 等非 UI 路径）
     _themeListener = () {
@@ -38,10 +36,8 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     Emitter<ThemeState> emit,
   ) async {
     final themeIndex = _storage.getString(_themeKey);
-    final visualStyleIndex = _storage.getString(_visualStyleKey);
 
     ThemeMode themeMode = ThemeMode.system;
-    VisualStyle visualStyle = VisualStyle.classic;
 
     if (themeIndex != null) {
       final index = int.tryParse(themeIndex);
@@ -50,19 +46,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       }
     }
 
-    if (visualStyleIndex != null) {
-      final vsIndex = int.tryParse(visualStyleIndex);
-      if (vsIndex != null && vsIndex >= 0) {
-        // modernist(1) 已移除，映射到 classic
-        if (vsIndex == 1) {
-          visualStyle = VisualStyle.classic;
-        } else if (vsIndex < VisualStyle.values.length) {
-          visualStyle = VisualStyle.values[vsIndex];
-        }
-      }
-    }
-
-    emit(ThemeState(themeMode, visualStyle));
+    emit(ThemeState(themeMode));
   }
 
   Future<void> _onThemeChanged(
@@ -70,15 +54,6 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     Emitter<ThemeState> emit,
   ) async {
     await _storage.setString(_themeKey, event.themeMode.index.toString());
-    emit(ThemeState(event.themeMode, state.visualStyle));
-  }
-
-  Future<void> _onVisualStyleChanged(
-    VisualStyleChanged event,
-    Emitter<ThemeState> emit,
-  ) async {
-    await _storage.setString(
-        _visualStyleKey, event.visualStyle.index.toString());
-    emit(ThemeState(state.themeMode, event.visualStyle));
+    emit(ThemeState(event.themeMode));
   }
 }

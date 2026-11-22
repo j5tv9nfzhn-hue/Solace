@@ -159,6 +159,9 @@ abstract class _AIServiceCore {
   AiTurnState? _lastTurnState;
   Map<String, dynamic>? _lastWebSearchTrace;
 
+  /// 最近一次请求的上下文窗口（token），供历史裁剪估算用；0 = 未就绪。
+  int _contextWindowHint = 0;
+
   // ---- 跨 mixin 调用的方法抽象声明（实现在主类或后续 mixin，全链可见）----
 
   bool _isCompactContextModel(String modelName);
@@ -225,22 +228,36 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
   AiTurnState? get lastTurnState => _lastTurnState;
   Map<String, dynamic>? get lastWebSearchTrace => _lastWebSearchTrace;
   /// 为内置 GLM-Z1-9B 注入模式专属参数（top_p, top_k, frequency_penalty, thinking_budget, max_tokens）
-  int _effectiveChatMaxTokens(int configuredMaxTokens) {
-    return configuredMaxTokens;
-  }
-  int? _chatMaxTokensForCurrentMode(int configuredMaxTokens,
+  /// 单次请求实际使用的 max_tokens。
+  ///
+  /// 预算统一走 [AIConfig.effectiveMaxOutputTokens]（显式设置 > 旧 maxTokens
+  /// > 按模型族推荐）；小说模式再抬到 [ApiDefaults.novelMaxTokensFloor]，
+  /// 避免服务端默认值太小导致「只开了完整输出却只出一句话」。
+  int? _chatMaxTokensForCurrentMode(AIConfig config,
       {bool forceConcise = false}) {
     final novelMode = _isNovelModeEnabled();
     final pureAiMode = _storage.isPureAiModeEnabled();
+    final budget = config.effectiveMaxOutputTokens;
     if (novelMode && !pureAiMode && !forceConcise) {
-      // 小说模式=完整输出：必须显式给足 max_tokens。
-      // 此前返回 null（不传 max_tokens）会退回服务端默认——很多模型/中转默认只有
-      // 几百 token，正是「开了完整输出却只出一句话」的根因。取 max(用户配置, 下限)。
-      return configuredMaxTokens > ApiDefaults.novelMaxTokensFloor
-          ? configuredMaxTokens
+      return budget > ApiDefaults.novelMaxTokensFloor
+          ? budget
           : ApiDefaults.novelMaxTokensFloor;
     }
-    return _effectiveChatMaxTokens(configuredMaxTokens);
+    return budget;
+  }
+  /// 计算本次可发送的历史条数。
+  ///
+  /// 仓库没有 tokenizer，按「每条消息 ≈120 token」粗估，并留 1/4 余量给
+  /// system 与回复；窗口未就绪时回退常量，保证行为不变。
+  int _historyContextLimit(bool isCompact) {
+    final window = _contextWindowHint;
+    if (window <= 0) {
+      return isCompact
+          ? Limit.chatHistoryContextCompact
+          : Limit.chatHistoryContext;
+    }
+    final byWindow = (window ~/ 120 * 3) ~/ 4;
+    return byWindow.clamp(8, isCompact ? 40 : 300);
   }
   bool _isCompactContextModel(String modelName) {
     final lower = modelName.toLowerCase();
@@ -357,6 +374,8 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
       throw Exception('No active configuration found');
     }
 
+    _contextWindowHint = config.effectiveContextWindow;
+
     final messages = await _buildMessages(
       character: character,
       userId: userId,
@@ -390,8 +409,7 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
     final allApiKeys = config.allApiKeys;
     int currentKeyIndex = 0;
     final maxTokens = overrideMaxTokens ??
-        _chatMaxTokensForCurrentMode(config.maxTokens,
-            forceConcise: forceConcise);
+        _chatMaxTokensForCurrentMode(config, forceConcise: forceConcise);
 
     for (int attempt = 1; attempt <= AppDurations.maxRetries; attempt++) {
       try {
@@ -404,6 +422,8 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
           // 对抗复读：惩罚重复 token / 重复话题
           'frequency_penalty': ApiDefaults.chatFrequencyPenalty,
           'presence_penalty': ApiDefaults.chatPresencePenalty,
+          // 推理深度（仅允许名单内的模型会真的带上该字段）
+          ...config.reasoningPayload,
         };
         if (maxTokens != null) {
           requestPayload['max_tokens'] = maxTokens;
@@ -617,6 +637,8 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
     final config = await _storage.getActiveAIConfig();
     if (config == null) throw Exception('No active configuration found');
 
+    _contextWindowHint = config.effectiveContextWindow;
+
     final messages = await _buildMessages(
       character: character,
       userId: userId,
@@ -654,7 +676,7 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
     final allApiKeys = config.allApiKeys;
     int currentKeyIndex = 0;
     final maxTokens =
-        _chatMaxTokensForCurrentMode(config.maxTokens, forceConcise: forceConcise);
+        _chatMaxTokensForCurrentMode(config, forceConcise: forceConcise);
 
     for (int attempt = 1; attempt <= AppDurations.maxRetries; attempt++) {
       try {
@@ -673,6 +695,8 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
             // 对抗复读：惩罚重复 token / 重复话题
             'frequency_penalty': ApiDefaults.chatFrequencyPenalty,
             'presence_penalty': ApiDefaults.chatPresencePenalty,
+            // 推理深度（仅允许名单内的模型会真的带上该字段）
+            ...config.reasoningPayload,
           };
           if (maxTokens != null) {
             requestPayload['max_tokens'] = maxTokens;

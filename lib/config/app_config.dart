@@ -3,11 +3,6 @@ import 'constants.dart';
 class AppConfig {
   AppConfig._();
 
-  /// 本地离线语音总开关。
-  /// 推理引擎（onnxruntime .so）由用户手动导入；模型文件不内置。
-  static const bool localTtsEnabled = true; // MOSS-TTS-Nano 语音合成
-  static const bool localSttEnabled = true; // SenseVoice 语音转文本
-
 
 
   static const String appWorkerBaseUrl = 'https://solace-doc.pages.dev';

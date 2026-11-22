@@ -163,7 +163,6 @@ class PrefKeys {
   static const String diaryEntries = 'diary_entries';
   static const String lastSeenAnnouncementId = 'last_seen_announcement_id';
   static const String themeMode = 'app_theme_mode';
-  static const String visualStyle = 'app_visual_style';
 
   // ─── 微信 iLink Bot ───
   static const String wxBotToken = 'wx_bot_token';
@@ -457,8 +456,3 @@ class DbTables {
         socialMemories,
       ];
 }
-
-/// 视觉风格包：经典（抖音风格）与微信主题
-// 注意：枚举按 index 持久化（PrefKeys.visualStyle），已保存 modernist(1) 的
-// 用户会在启动时映射回 classic，避免越界崩溃
-enum VisualStyle { classic, wechat }

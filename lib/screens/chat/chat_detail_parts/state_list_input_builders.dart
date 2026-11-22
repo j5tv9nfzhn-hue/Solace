@@ -1,7 +1,7 @@
 // 消息列表与输入区构建（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs, _StateAppBarBuilders {
+mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs, _StateAppBarBuilders {
   Widget _buildMessageList(BuildContext context, List<ChatMessage> messages,
       {bool showTyping = false, String? typingStatusText}) {
     final authState = context.read<AuthBloc>().state;
@@ -106,55 +106,22 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                           RepositoryProvider.of<LocalStorageRepository>(context)
                               .getNovelDialogueColor(),
                       hasBackgroundImage: _hasVisibleBackground,
-                      wechatStyle: _isWeChatStyle,
                       onMoneyTap: _moneyTapHandler(message),
                       onImageTap: message.type == MessageType.image
                           ? () => _showFullScreenImage(message.content)
                           : null,
-                      onPlayVoice: message.isFromAI
-                          ? () => _playMessageVoice(message)
-                          : null,
-                      voiceBusy: _synthesizingMessageId == message.id,
                     ),
                   ),
                   if (showTime)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: _isWeChatStyle
-                          ? Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? const Color(0xFF3A3A3A)
-                                      : const Color(0xFFE6E6E6),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  _formatMessageTime(message.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    height: 1.2,
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? WeChatColors.darkTextSecondary
-                                        : const Color(0xFFB2B2B2),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Text(
-                              _formatMessageTime(message.createdAt),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.4),
-                              ),
-                            ),
+                      child: Text(
+                        _formatMessageTime(message.createdAt),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -218,76 +185,6 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
     }
 
     return _buildNormalInput(context, colorScheme);
-  }
-
-
-  /// 保留为兼容旧调用点；当前布局不再挂载常驻快捷栏。
-  Widget _buildQuickActionsBar(
-      BuildContext context, ColorScheme colorScheme) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isWeChat = _isWeChatStyle;
-    final fg = isWeChat
-        ? (isDark ? WeChatColors.darkTextPrimary : WeChatColors.textPrimary)
-        : (isDark ? ImmersiveColors.textSecondary : const Color(0xFF766E6C));
-    final panelColor = isWeChat
-        ? (isDark ? WeChatColors.darkChatBottomBar : WeChatColors.listItem)
-        : (isDark
-            ? ImmersiveColors.cardHigh
-            : Colors.white.withOpacity(0.78));
-    final panelBorder = isWeChat
-        ? (isDark ? WeChatColors.darkDivider : WeChatColors.divider)
-        : (isDark
-            ? Colors.white.withOpacity(0.10)
-            : Colors.black.withOpacity(0.07));
-
-    Widget actionButton(IconData icon, String label, VoidCallback onTap) {
-      return Expanded(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 20, color: fg),
-                const SizedBox(height: 3),
-                Text(label, style: TextStyle(fontSize: 10, color: fg)),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: panelColor,
-        borderRadius: BorderRadius.circular(isWeChat ? 8.0 : 16),
-        border: Border.all(color: panelBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.12 : 0.035),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          actionButton(Icons.call_rounded, '语音通话',
-              () => _openVoiceCall(context)),
-          actionButton(Icons.person_outline_rounded, '角色卡',
-              () => _openChatSettings(context)),
-          actionButton(Icons.emoji_emotions_outlined, '贴纸',
-              () => _showStickerPicker()),
-          actionButton(
-              Icons.add_circle_outline_rounded, '更多', () => _showMoreActions()),
-        ],
-      ),
-    );
   }
 
 
@@ -386,21 +283,17 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
           ),
         Container(
           decoration: BoxDecoration(
-            color: _isWeChatStyle
-                ? (isDark ? WeChatColors.darkChatBottomBar : WeChatColors.chatBottomBar)
-                : (isDark
-                    ? ImmersiveColors.cardHigh
-                    : Colors.white.withOpacity(0.82)),
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(_isWeChatStyle ? 0 : 22),
+            color: isDark
+                ? ImmersiveColors.cardHigh
+                : Colors.white.withOpacity(0.82),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(22),
             ),
             border: Border(
               top: BorderSide(
-                color: _isWeChatStyle
-                    ? (isDark ? WeChatColors.darkDivider : WeChatColors.divider)
-                    : (isDark
-                        ? Colors.white.withOpacity(0.10)
-                        : Colors.black.withOpacity(0.07)),
+                color: isDark
+                    ? Colors.white.withOpacity(0.10)
+                    : Colors.black.withOpacity(0.07),
                 width: 0.7,
               ),
             ),
@@ -490,41 +383,6 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // 语音输入按钮（录音转文字）
-                      Tooltip(
-                        message: _isRecordingVoice ? '停止并识别' : '语音输入',
-                        child: GestureDetector(
-                          onTap: _handleVoiceInput,
-                          child: Container(
-                            width: 36,
-                            height: 40,
-                            margin: const EdgeInsets.only(right: 4, bottom: 2),
-                            alignment: Alignment.center,
-                            child: _isTranscribingVoice
-                                ? SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: isDark
-                                          ? Colors.white.withOpacity(0.7)
-                                          : Colors.black.withOpacity(0.5),
-                                    ),
-                                  )
-                                : Icon(
-                                    _isRecordingVoice
-                                        ? Icons.stop_circle_outlined
-                                        : Icons.mic_none,
-                                    size: 24,
-                                    color: _isRecordingVoice
-                                        ? Colors.redAccent
-                                        : (isDark
-                                            ? Colors.white.withOpacity(0.6)
-                                            : Colors.black.withOpacity(0.5)),
-                                  ),
-                          ),
-                        ),
-                      ),
                       // 括号快捷按钮（语c动作描写）
                       Tooltip(
                         message: '输入括号（语C动作描写）',
@@ -563,27 +421,20 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                           ),
                         ),
                       ),
-                      // 输入框（微信风格：白底小圆角；沉浸式：深底胶囊）
+                      // 输入框（沉浸式：深底胶囊）
                       Expanded(
                         child: Container(
                           constraints: const BoxConstraints(
                               minHeight: 40, maxHeight: 120),
                           decoration: BoxDecoration(
-                            color: _isWeChatStyle
-                                ? (isDark
-                                    ? WeChatColors.darkInputBox
-                                    : WeChatColors.inputBox)
-                            : isDark
+                            color: isDark
                                 ? ImmersiveColors.backgroundUp.withOpacity(0.72)
                                 : const Color(0xFFF8F5F2),
-                            borderRadius: BorderRadius.circular(
-                                _isWeChatStyle ? 6.0 : 18),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: _isWeChatStyle && !isDark
-                                  ? WeChatColors.dividerLight
-                                  : (isDark
-                                      ? Colors.white.withOpacity(0.10)
-                                      : Colors.black.withOpacity(0.07)),
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.10)
+                                  : Colors.black.withOpacity(0.07),
                             ),
                           ),
                           child: Row(
@@ -845,7 +696,6 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
               novelMode: _isNovelModeEnabled(),
               hasActionBracket:
                   RegExp(r'[（(]([^（)()]+)[）)]').hasMatch(streamingText),
-              wechatStyle: _isWeChatStyle,
             );
           }
           final msgIndex = index - 1;
@@ -884,12 +734,8 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                     RepositoryProvider.of<LocalStorageRepository>(context)
                         .getNovelDialogueColor(),
                 hasBackgroundImage: _hasVisibleBackground,
-                wechatStyle: _isWeChatStyle,
                 onMoneyTap: _moneyTapHandler(message),
                 onImageTap: message.type == MessageType.image ? () {} : null,
-                onPlayVoice:
-                    message.isFromAI ? () => _playMessageVoice(message) : null,
-                voiceBusy: _synthesizingMessageId == message.id,
               ),
             ),
           );

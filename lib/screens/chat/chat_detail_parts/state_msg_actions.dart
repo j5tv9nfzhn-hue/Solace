@@ -1,7 +1,7 @@
 // 消息操作（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateMessageActions on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney, _StateSearch {
+mixin _StateMessageActions on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney, _StateSearch {
   void _showStickerPicker() {
     tapHaptic();
     showModalBottomSheet(
@@ -87,11 +87,9 @@ mixin _StateMessageActions on State<ChatDetailScreen>, _StateCore, _StateLoadCor
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: _isWeChatStyle
-                          ? (isDark
-                              ? WeChatColors.darkTextPrimary
-                              : WeChatColors.textPrimary)
-                          : null,
+                      color: isDark
+                          ? WeChatColors.darkTextPrimary
+                          : WeChatColors.textPrimary,
                     ),
                   ),
                 ),
@@ -201,65 +199,6 @@ mixin _StateMessageActions on State<ChatDetailScreen>, _StateCore, _StateLoadCor
     final canEditAI =
         isAIMessage && !isRecalled && message.type == MessageType.text;
     final canRegenerate = isAIMessage && !isRecalled;
-
-    // 微信模式：横向浮动菜单（回复/复制/编辑/重新生成/撤回/转发/收藏/多选/删除）
-    if (_isWeChatStyle) {
-      final items = <WeChatMenuItem>[
-        WeChatMenuItem(
-            label: '回复',
-            icon: Icons.reply_outlined,
-            onPressed: () => _setReplyTo(message)),
-        if (!isRecalled && message.type == MessageType.text)
-          WeChatMenuItem(
-            label: '复制',
-            icon: Icons.copy_outlined,
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: message.content));
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('已复制'), duration: Duration(seconds: 1)));
-              }
-            },
-          ),
-        if (canEditAI)
-          WeChatMenuItem(
-              label: '编辑',
-              icon: Icons.edit_outlined,
-              onPressed: () => _showEditAIReplyDialog(message)),
-        if (canRegenerate)
-          WeChatMenuItem(
-              label: '重新生成',
-              icon: Icons.refresh_outlined,
-              onPressed: () => _showRegenerateConfirm(message)),
-        if (canRecall)
-          WeChatMenuItem(
-              label: '撤回',
-              icon: Icons.undo_outlined,
-              onPressed: () => _recallMessage(message)),
-        if (!isRecalled &&
-            message.type != MessageType.transfer &&
-            message.type != MessageType.redPacket)
-          WeChatMenuItem(
-              label: '转发',
-              icon: Icons.forward_outlined,
-              onPressed: () => _showForwardPicker(message)),
-        WeChatMenuItem(
-            label: message.isBookmark ? '取消收藏' : '收藏',
-            icon: Icons.star_outline,
-            onPressed: () => _chatBloc.add(ChatToggleBookmark(
-                chatId: widget.session.id, messageId: message.id))),
-        WeChatMenuItem(
-            label: '多选',
-            icon: Icons.checklist_outlined,
-            onPressed: () => _enterSelection(message.id)),
-        WeChatMenuItem(
-            label: '删除',
-            icon: Icons.delete_outline,
-            onPressed: () => _showDeleteConfirm(message)),
-      ];
-      WeChatMessageMenu.show(context: context, items: items, anchor: anchor);
-      return;
-    }
 
     final actions = <MessageActionItem>[
       MessageActionItem(

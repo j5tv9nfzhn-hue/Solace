@@ -22,10 +22,6 @@ mixin _StateLoadCore on State<ChatDetailScreen>, _StateCore {
       Theme.of(context).brightness == Brightness.dark;
 
 
-  /// 微信视觉风格是否生效（第三主题，微信骨架适配）。
-  bool get _isWeChatStyle => context.read<ThemeBloc>().state.isWeChat;
-
-
   Future<void> _loadTurnState() async {
     final raw = RepositoryProvider.of<LocalStorageRepository>(context)
         .getString('turn_state_${widget.session.id}');

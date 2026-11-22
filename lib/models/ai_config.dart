@@ -24,6 +24,15 @@ class AIConfig extends Equatable {
   final int maxTokens;
   final bool isActive;
   final bool isThinkingModel;
+
+  /// 上下文窗口（token）。null = 按模型族推荐；只用于本地历史裁剪，不进请求体。
+  final int? contextWindow;
+
+  /// 单次最大输出（token）。null = 按模型族推荐（回退旧 maxTokens）。
+  final int? maxOutputTokens;
+
+  /// 推理深度：0=关闭，1=低，2=中，3=高。仅对推理模型 + 已验证家族生效。
+  final int reasoningDepth;
   /// 是否多模态（支持看图）。用户手动勾选；为 true 时发图走 OpenAI vision content 数组。
   final bool isMultimodal;
   final DateTime createdAt;
@@ -42,6 +51,9 @@ class AIConfig extends Equatable {
     this.isActive = true,
     this.isThinkingModel = true,
     this.isMultimodal = false,
+    this.contextWindow,
+    this.maxOutputTokens,
+    this.reasoningDepth = 0,
     required this.createdAt,
     this.updatedAt,
     this.syncSeq = 0,
@@ -61,6 +73,9 @@ class AIConfig extends Equatable {
     bool? isActive,
     bool? isThinkingModel,
     bool? isMultimodal,
+    int? contextWindow,
+    int? maxOutputTokens,
+    int? reasoningDepth,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? syncSeq,
@@ -77,6 +92,9 @@ class AIConfig extends Equatable {
       isActive: isActive ?? this.isActive,
       isThinkingModel: isThinkingModel ?? this.isThinkingModel,
       isMultimodal: isMultimodal ?? this.isMultimodal,
+      contextWindow: contextWindow ?? this.contextWindow,
+      maxOutputTokens: maxOutputTokens ?? this.maxOutputTokens,
+      reasoningDepth: reasoningDepth ?? this.reasoningDepth,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncSeq: syncSeq ?? this.syncSeq,
@@ -96,6 +114,9 @@ class AIConfig extends Equatable {
       'isActive': isActive ? 1 : 0,
       'isThinkingModel': isThinkingModel ? 1 : 0,
       'isMultimodal': isMultimodal ? 1 : 0,
+      'contextWindow': contextWindow,
+      'maxOutputTokens': maxOutputTokens,
+      'reasoningDepth': reasoningDepth,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'sync_seq': syncSeq,
@@ -123,6 +144,9 @@ class AIConfig extends Equatable {
       isActive: map['isActive'] == 1,
       isThinkingModel: map['isThinkingModel'] == null ? true : map['isThinkingModel'] == 1,
       isMultimodal: map['isMultimodal'] == 1,
+      contextWindow: (map['contextWindow'] as num?)?.toInt(),
+      maxOutputTokens: (map['maxOutputTokens'] as num?)?.toInt(),
+      reasoningDepth: (map['reasoningDepth'] as num?)?.toInt() ?? 0,
       createdAt: tryParseDateTime(map['createdAt']) ?? DateTime.now(),
       updatedAt: tryParseDateTime(map['updatedAt']),
       syncSeq: (map['sync_seq'] ?? map['syncSeq']) as int? ?? 0,
@@ -209,6 +233,34 @@ class AIConfig extends Equatable {
   /// 海外模型安全分类器更敏感：推理/非推理都加强，不再只看 isThinkingModel
   bool get faOverseasBoost => modelFamily.isOverseas;
 
+  /// 是否启用推理深度（关闭或非推理模型时无效果）。
+  bool get reasoningEnabled => reasoningDepth > 0 && isThinkingModel;
+
+  /// 本次请求实际生效的上下文窗口（token）。未设置时按模型族推荐。
+  int get effectiveContextWindow =>
+      contextWindow ?? ModelBudgetDefaults.contextWindowFor(modelFamily);
+
+  /// 本次请求实际生效的最大输出（token）。
+  ///
+  /// 优先显式 maxOutputTokens；否则沿用旧 maxTokens；都没有才按族推荐，
+  /// 保证历史配置（只填过 maxTokens）行为不变。
+  int get effectiveMaxOutputTokens {
+    final explicit = maxOutputTokens;
+    if (explicit != null && explicit > 0) return explicit;
+    if (maxTokens > 0) return maxTokens;
+    return ModelBudgetDefaults.maxOutputTokensFor(modelFamily);
+  }
+
+  /// 推理深度 → 请求体附加参数（未知组合返回空，不污染 payload）。
+  Map<String, dynamic> get reasoningPayload {
+    if (!reasoningEnabled) return const {};
+    if (!ModelBudgetDefaults.supportsReasoningEffort(modelName)) return const {};
+    return {
+      'reasoning_effort':
+          ModelBudgetDefaults.reasoningEffortLabel(reasoningDepth),
+    };
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -222,8 +274,72 @@ class AIConfig extends Equatable {
         isActive,
         isThinkingModel,
         isMultimodal,
+        contextWindow,
+        maxOutputTokens,
+        reasoningDepth,
         createdAt,
         updatedAt,
         syncSeq,
       ];
+}
+
+/// 模型预算推荐（纯函数，单一来源）。
+///
+/// 用户没填上下文窗口 / 最大输出时，按模型族给一个保守默认值；
+/// 设置页把这里的结果作为初始建议值，用户可随时覆盖。
+class ModelBudgetDefaults {
+  ModelBudgetDefaults._();
+
+  /// 各族的默认上下文窗口（token）。
+  static int contextWindowFor(ModelFamily family) => switch (family) {
+        ModelFamily.openai => 128000,
+        ModelFamily.anthropic => 200000,
+        ModelFamily.google => 1000000,
+        ModelFamily.xai => 131072,
+        ModelFamily.domestic => 32768,
+        ModelFamily.other => 32768,
+      };
+
+  /// 各族的默认单次最大输出（token）。
+  static int maxOutputTokensFor(ModelFamily family) => switch (family) {
+        ModelFamily.openai => 4096,
+        ModelFamily.anthropic => 4096,
+        ModelFamily.google => 8192,
+        ModelFamily.xai => 4096,
+        ModelFamily.domestic => 2048,
+        ModelFamily.other => 2048,
+      };
+
+  /// 上下文窗口可填范围（UI 与写库兜底共用）。
+  static const int contextWindowMin = 4096;
+  static const int contextWindowMax = 2000000;
+
+  /// 最大输出可填范围。
+  static const int maxOutputTokensMin = 256;
+  static const int maxOutputTokensMax = 65536;
+
+  /// 是否属于已知支持 `reasoning_effort` 的 OpenAI 系推理模型。
+  ///
+  /// 只列 o 系列 / gpt-5 系 / 显式带 reasoning 的型号；其它家族一律不发字段，
+  /// 避免 OpenAI 兼容中转站因未知字段直接 400。
+  static bool supportsReasoningEffort(String modelName) {
+    final m = modelName.toLowerCase();
+    const keys = ['o1', 'o3', 'o4', 'gpt-5', 'reasoning'];
+    return keys.any(m.contains);
+  }
+
+  /// 推理深度 → `reasoning_effort` 取值（low / medium / high）。
+  static String reasoningEffortLabel(int depth) => switch (depth) {
+        <= 1 => 'low',
+        2 => 'medium',
+        _ => 'high',
+      };
+
+  /// 推理深度 → 中文标签（界面展示用）。
+  static String reasoningDepthLabel(int depth) => switch (depth) {
+        <= 0 => '关闭',
+        1 => '低',
+        2 => '中',
+        _ => '高',
+      };
 }

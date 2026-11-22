@@ -113,24 +113,6 @@ mixin _StateCore {
   Timer? _loadingFallbackTimer;
 
 
-  // ─── 本地语音（AI 回复合成播放 + 录音转文字） ───
-  final VoiceRecorderService _voiceRecorder = VoiceRecorderService();
-
-  final VoicePlayerService _voicePlayer = VoicePlayerService();
-
-  // 语音合成实例。createTtsServiceFromSettings() 是异步的（读 provider 设置），
-  // 构造期无法 await，故延迟到首次使用前创建。
-  TtsService? _ttsInstance;
-  Future<TtsService> _ensureTts() async =>
-      _ttsInstance ??= await createTtsServiceFromSettings();
-
-  final LocalSttService _localStt = createLocalSttService();
-
-  bool _isRecordingVoice = false;
-
-  bool _isTranscribingVoice = false;
-
-  String? _synthesizingMessageId; // 正在合成语音的消息 id
 
   bool _forceUseFallback = false;
 

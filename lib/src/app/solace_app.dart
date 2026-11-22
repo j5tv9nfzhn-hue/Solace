@@ -127,79 +127,6 @@ class SolaceApp extends StatelessWidget {
     surfaceTint: ImmersiveColors.accent,
   );
 
-  // 微信风格浅色方案（18.3.0，色值逆向提取自仿微信应用 + WeUI 核对）
-  static final wechatLightColorScheme = ColorScheme(
-    brightness: Brightness.light,
-    primary: WeChatColors.brandGreen,
-    onPrimary: Colors.white,
-    primaryContainer: WeChatColors.bubbleMine,
-    onPrimaryContainer: WeChatColors.bubbleMineText,
-    secondary: WeChatColors.linkBlue,
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFDCE6F2),
-    onSecondaryContainer: const Color(0xFF2B3A52),
-    tertiary: const Color(0xFFF4AB5D),
-    onTertiary: const Color(0xFF4A2D0A),
-    tertiaryContainer: const Color(0xFFFDF2DF),
-    onTertiaryContainer: const Color(0xFF6B4514),
-    error: WeChatColors.badgeRed,
-    onError: Colors.white,
-    errorContainer: const Color(0xFFFFDAD6),
-    onErrorContainer: const Color(0xFF410002),
-    surface: WeChatColors.pageBackground,
-    onSurface: WeChatColors.textPrimary,
-    surfaceContainerLowest: Colors.white,
-    surfaceContainerLow: WeChatColors.listItem,
-    surfaceContainer: const Color(0xFFF5F5F5),
-    surfaceContainerHigh: const Color(0xFFEDEDED),
-    surfaceContainerHighest: WeChatColors.divider,
-    onSurfaceVariant: WeChatColors.textSecondary,
-    outline: WeChatColors.dividerLight,
-    outlineVariant: WeChatColors.divider,
-    shadow: const Color(0xFF000000),
-    scrim: const Color(0xFF000000),
-    inverseSurface: WeChatColors.textPrimary,
-    onInverseSurface: WeChatColors.pageBackground,
-    inversePrimary: WeChatColors.brandGreen,
-    surfaceTint: WeChatColors.brandGreen,
-  );
-
-  // 微信风格深色方案（values-night 提取：#111111 底 + #181818 列表 + #2C2C2C 卡片）
-  static final wechatDarkColorScheme = ColorScheme(
-    brightness: Brightness.dark,
-    primary: WeChatColors.brandGreen,
-    onPrimary: WeChatColors.darkBubbleMineText,
-    primaryContainer: const Color(0xFF1F4B2A),
-    onPrimaryContainer: WeChatColors.bubbleMine,
-    secondary: WeChatColors.linkBlue,
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFF232C3D),
-    onSecondaryContainer: const Color(0xFFB9C6DC),
-    tertiary: const Color(0xFFE5A058),
-    onTertiary: const Color(0xFF3D2408),
-    tertiaryContainer: const Color(0xFF362A20),
-    onTertiaryContainer: const Color(0xFFF0D9BC),
-    error: WeChatColors.badgeRed,
-    onError: Colors.white,
-    errorContainer: const Color(0xFF93000A),
-    onErrorContainer: const Color(0xFFFFDAD6),
-    surface: WeChatColors.darkPageBackground,
-    onSurface: const Color(0xFFD2D2D2),
-    surfaceContainerLowest: const Color(0xFF0D0D0D),
-    surfaceContainerLow: WeChatColors.darkListItem,
-    surfaceContainer: WeChatColors.darkChatBottomBar,
-    surfaceContainerHigh: const Color(0xFF242424),
-    surfaceContainerHighest: WeChatColors.darkCard,
-    onSurfaceVariant: WeChatColors.darkTextSecondary,
-    outline: const Color(0xFF3A3A3A),
-    outlineVariant: WeChatColors.darkDivider,
-    shadow: const Color(0xFF000000),
-    scrim: const Color(0xFF000000),
-    inverseSurface: const Color(0xFFD2D2D2),
-    onInverseSurface: WeChatColors.darkPageBackground,
-    inversePrimary: const Color(0xFF0A5C30),
-    surfaceTint: WeChatColors.brandGreen,
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -262,14 +189,8 @@ class SolaceApp extends StatelessWidget {
         ],
         child: BlocBuilder<ThemeBloc, ThemeState>(
           builder: (context, themeState) {
-            final lightScheme = switch (themeState.visualStyle) {
-              VisualStyle.wechat => wechatLightColorScheme,
-              VisualStyle.classic => defaultLightColorScheme,
-            };
-            final darkScheme = switch (themeState.visualStyle) {
-              VisualStyle.wechat => wechatDarkColorScheme,
-              VisualStyle.classic => defaultDarkColorScheme,
-            };
+            final lightScheme = defaultLightColorScheme;
+            final darkScheme = defaultDarkColorScheme;
 
             return MaterialApp(
               title: 'Solace',

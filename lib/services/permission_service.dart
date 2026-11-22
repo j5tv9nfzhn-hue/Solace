@@ -105,15 +105,6 @@ class PermissionService {
     return _safeRequest(Permission.camera);
   }
 
-  static Future<bool> hasMicrophonePermission() async {
-    return _safeCheck(Permission.microphone);
-  }
-
-  /// 本地语音输入（录音转文字）用，按需申请。
-  static Future<bool> requestMicrophonePermission() async {
-    return _safeRequest(Permission.microphone);
-  }
-
   static Future<bool> requestStoragePermission() async {
     if (Platform.isAndroid) {
       final storage = await _safeRequest(Permission.storage);

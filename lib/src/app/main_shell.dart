@@ -586,25 +586,14 @@ class _MainShellState extends State<_MainShell> with WidgetsBindingObserver {
       ),
       bottomNavigationBar: Builder(
         builder: (context) {
-          final themeState = context.read<ThemeBloc>().state;
-          final isWeChat = themeState.isWeChat;
           final isDark = Theme.of(context).brightness == Brightness.dark;
-          // 微信模式只有 4 个 Tab；非微信为 消息/通讯录/发现/我/用量
-          if (isWeChat && _currentIndex >= 4) {
-            _currentIndex = 0;
-            _pageCache.remove(4);
-          }
           return Container(
             decoration: BoxDecoration(
                 border: Border(
                     top: BorderSide(
-                        color: isWeChat
-                            ? (isDark
-                                ? WeChatColors.darkDivider
-                                : WeChatColors.divider)
-                            : isDark
-                                ? ImmersiveColors.border
-                                : cs.outline.withOpacity(0.3),
+                        color: isDark
+                            ? ImmersiveColors.border
+                            : cs.outline.withOpacity(0.3),
                         width: 0.5))),
             child: BottomNavigationBar(
               currentIndex: _currentIndex,
@@ -620,56 +609,38 @@ class _MainShellState extends State<_MainShell> with WidgetsBindingObserver {
                 });
               },
               type: BottomNavigationBarType.fixed,
-              backgroundColor: isWeChat
-                  ? (isDark
-                      ? WeChatColors.darkPageBackground
-                      : WeChatColors.pageBackground)
-                  : isDark
-                      ? ImmersiveColors.navBackground
-                      : cs.surface,
-              selectedItemColor: isWeChat
-                  ? WeChatColors.brandGreen
-                  : isDark
-                      ? ImmersiveColors.accent
-                      : cs.primary,
-              unselectedItemColor: isWeChat
-                  ? (isDark
-                      ? WeChatColors.darkTextPreview
-                      : const Color(0xFF999999))
-                  : isDark
-                      ? ImmersiveColors.textTertiary
-                      : cs.onSurfaceVariant,
-              selectedFontSize: isWeChat ? WeChatDimens.tabTextSize : 10,
-              unselectedFontSize: isWeChat ? WeChatDimens.tabTextSize : 10,
+              backgroundColor:
+                  isDark ? ImmersiveColors.navBackground : cs.surface,
+              selectedItemColor: isDark ? ImmersiveColors.accent : cs.primary,
+              unselectedItemColor: isDark
+                  ? ImmersiveColors.textTertiary
+                  : cs.onSurfaceVariant,
+              selectedFontSize: 10,
+              unselectedFontSize: 10,
               elevation: 0,
-              items: [
+              items: const [
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.chat_bubble_outline,
-                      size: isWeChat ? WeChatDimens.tabIconSize : null),
-                  activeIcon: Icon(Icons.chat_bubble,
-                      size: isWeChat ? WeChatDimens.tabIconSize : null),
-                  label: isWeChat ? '微信' : '消息',
+                  icon: Icon(Icons.chat_bubble_outline),
+                  activeIcon: Icon(Icons.chat_bubble),
+                  label: '消息',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.contacts_outlined,
-                      size: isWeChat ? WeChatDimens.tabIconSize : null),
-                  activeIcon: Icon(Icons.contacts,
-                      size: isWeChat ? WeChatDimens.tabIconSize : null),
+                  icon: Icon(Icons.contacts_outlined),
+                  activeIcon: Icon(Icons.contacts),
                   label: '通讯录',
                 ),
-                const BottomNavigationBarItem(
+                BottomNavigationBarItem(
                     icon: Icon(Icons.explore_outlined),
                     activeIcon: Icon(Icons.explore),
                     label: '发现'),
-                const BottomNavigationBarItem(
+                BottomNavigationBarItem(
                     icon: Icon(Icons.person_outline),
                     activeIcon: Icon(Icons.person),
                     label: '我'),
-                if (!isWeChat)
-                  const BottomNavigationBarItem(
-                      icon: Icon(Icons.donut_large_outlined),
-                      activeIcon: Icon(Icons.donut_large),
-                      label: '用量'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.donut_large_outlined),
+                    activeIcon: Icon(Icons.donut_large),
+                    label: '用量'),
               ],
             ),
           );

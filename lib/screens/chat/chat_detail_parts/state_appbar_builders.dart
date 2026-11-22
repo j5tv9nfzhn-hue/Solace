@@ -1,20 +1,19 @@
 // 顶栏构建（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs {
+mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney, _StateSearch, _StateMessageActions, _StateNavDialogs {
   // ─── 现代风格 AppBar ───
   PreferredSizeWidget _buildModernAppBar(ColorScheme colorScheme) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
-    final isWeChat = _isWeChatStyle;
     final currentName = _displayName ??
         _currentSession?.aiCharacterName ??
         widget.session.aiCharacterName;
     final currentAvatar =
         _currentSession?.aiCharacterAvatar ?? widget.session.aiCharacterAvatar;
     final iconColor = isDark
-        ? (isWeChat ? Colors.white : ImmersiveColors.textPrimary)
-        : (isWeChat ? Colors.black87 : const Color(0xFF4A4140));
+        ? ImmersiveColors.textPrimary
+        : const Color(0xFF4A4140);
     return AppBar(
       // 18.3.0 沉浸式：深色下 AppBar 透明，仅保留自上而下的暗色渐变遮罩，
       // 让角色氛围背景从屏幕顶端贯通到底部。
@@ -22,32 +21,24 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      flexibleSpace: isWeChat
+      flexibleSpace: isDark
           ? DecoratedBox(
               decoration: BoxDecoration(
-                color: isDark
-                    ? WeChatColors.darkPageBackground
-                    : WeChatColors.chatBackground,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    ImmersiveColors.background.withOpacity(0.92),
+                    ImmersiveColors.background.withOpacity(0.35),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.7, 1.0],
+                ),
               ),
             )
-          : isDark
-              ? DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        ImmersiveColors.background.withOpacity(0.92),
-                        ImmersiveColors.background.withOpacity(0.35),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.7, 1.0],
-                    ),
-                  ),
-                )
-              : DecoratedBox(
-                  decoration: const BoxDecoration(color: Color(0xFFF1EFEB)),
-                ),
+          : DecoratedBox(
+              decoration: const BoxDecoration(color: Color(0xFFF1EFEB)),
+            ),
       leading: IconButton(
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
@@ -64,25 +55,8 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
       ),
       titleSpacing: 0,
       centerTitle: false,
-      bottom: isWeChat
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(WeChatDimens.dividerHeight),
-              child: Divider(
-                height: WeChatDimens.dividerHeight,
-                thickness: WeChatDimens.dividerHeight,
-                color: isDark
-                    ? WeChatColors.darkDivider
-                    : WeChatColors.divider,
-              ),
-            )
-          : null,
       actions: [
         const AiModelSwitcher(),
-        IconButton(
-          tooltip: '语音通话',
-          icon: Icon(Icons.call_rounded, color: iconColor, size: 22),
-          onPressed: () => _openVoiceCall(context),
-        ),
         PopupMenuButton<String>(
           icon: Icon(Icons.more_horiz_rounded, color: iconColor, size: 24),
           tooltip: '更多',
@@ -206,16 +180,10 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
     String currentName,
     String? currentAvatar,
   ) {
-    final isWeChat = _isWeChatStyle;
-    final primary = isDark
-        ? (isWeChat ? WeChatColors.darkTextPrimary : ImmersiveColors.textPrimary)
-        : (isWeChat ? WeChatColors.textPrimary : const Color(0xFF312B29));
-    final secondary = isDark
-        ? (isWeChat ? WeChatColors.darkTextSecondary : ImmersiveColors.textSecondary)
-        : (isWeChat ? WeChatColors.textSecondary : const Color(0xFF817775));
-    final accent = isWeChat
-        ? colorScheme.primary
-        : (isDark ? ImmersiveColors.accent : const Color(0xFF9B5F67));
+    final primary = isDark ? ImmersiveColors.textPrimary : const Color(0xFF312B29);
+    final secondary =
+        isDark ? ImmersiveColors.textSecondary : const Color(0xFF817775);
+    final accent = isDark ? ImmersiveColors.accent : const Color(0xFF9B5F67);
     final intimacy = (_currentSession ?? widget.session)
         .intimacyLevel
         .clamp(0, 999999)
@@ -247,9 +215,9 @@ mixin _StateAppBarBuilders on State<ChatDetailScreen>, _StateCore, _StateLoadCor
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: primary,
-                        fontSize: isWeChat ? 16 : 15,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: isWeChat ? 0 : 0.1,
+                        letterSpacing: 0.1,
                       ),
                     ),
                     const SizedBox(height: 2),

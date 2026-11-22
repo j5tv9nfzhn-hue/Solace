@@ -21,7 +21,6 @@ import '../../widgets/image_cropper.dart';
 import '../../widgets/background_picker.dart';
 import '../../widgets/last_request_viewer.dart';
 import '../../utils/background_resolver.dart';
-import '../voice/voice_clone_screen.dart';
 import 'interaction_settings_screen.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/chat/chat_bloc.dart';
@@ -1296,22 +1295,6 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 ),
               );
             }
-          },
-        ),
-        _SettingsItem(
-          icon: Icons.graphic_eq_rounded,
-          title: '音色克隆',
-          subtitle: '为该角色录制或导入 mp3，克隆专属音色',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => VoiceCloneScreen(
-                  characterId: _localSession.aiCharacterId,
-                  characterName: _localSession.aiCharacterName,
-                ),
-              ),
-            );
           },
         ),
         if (_character != null) ...[

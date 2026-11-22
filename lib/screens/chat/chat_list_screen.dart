@@ -648,24 +648,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return ListView.separated(
       itemCount: entries.length,
-      separatorBuilder: (context, index) {
-        final isWeChat = context.read<ThemeBloc>().state.isWeChat;
-        if (isWeChat) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return Divider(
-            height: WeChatDimens.dividerHeight,
-            thickness: WeChatDimens.dividerHeight,
-            indent: WeChatDimens.dividerIndent,
-            color: isDark ? WeChatColors.darkDivider : WeChatColors.divider,
-          );
-        }
-        return Divider(
-          height: 0.5,
-          thickness: 0.5,
-          indent: 80,
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
-        );
-      },
+      separatorBuilder: (context, index) => Divider(
+        height: 0.5,
+        thickness: 0.5,
+        indent: 80,
+        color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
+      ),
       itemBuilder: (context, index) {
         final entry = entries[index];
         if (entry.isGroup) {
@@ -983,8 +971,6 @@ class _ChatListTileState extends State<_ChatListTile> {
     final timeText = session.lastMessageTime != null
         ? _formatTime(session.lastMessageTime!)
         : '';
-    final isWeChat = context.read<ThemeBloc>().state.isWeChat;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
       onTap: () async {
@@ -1013,15 +999,10 @@ class _ChatListTileState extends State<_ChatListTile> {
       },
       onLongPress: widget.onLongPress,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: isWeChat ? WeChatDimens.sessionPaddingH : 16,
-          vertical: isWeChat ? 10 : 10,
-        ),
-        child: isWeChat
-            ? _buildWeChatRow(isDark, timeText)
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
                   Stack(
                     children: [
                       _buildAvatar(colorScheme),
@@ -1107,118 +1088,6 @@ class _ChatListTileState extends State<_ChatListTile> {
       ),
     );
   }
-
-  /// 微信模式会话行：圆角方形头像 + 标题/摘要竖排 + 右上时间 + 红角标。
-  Widget _buildWeChatRow(bool isDark, String timeText) {
-    final session = widget.session;
-    final name = _displayName ?? session.aiCharacterName;
-    return Row(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            WeChatAvatar(
-              imageUrl: session.aiCharacterAvatar,
-              size: WeChatDimens.sessionAvatarSize,
-              fallbackText: name,
-            ),
-            if (session.unreadCount > 0)
-              Positioned(
-                right: -4,
-                top: -4,
-                child: Container(
-                  constraints: const BoxConstraints(
-                      minWidth: 17, minHeight: 17),
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  decoration: BoxDecoration(
-                    color: WeChatColors.badgeRed,
-                    borderRadius: BorderRadius.circular(9),
-                    // 微信未读红点带 1.5dp 白色描边（规格：逆向自刷圈兔/微信资源）
-                    border: Border.all(
-                      color: isDark
-                          ? WeChatColors.darkPageBackground
-                          : Colors.white,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Text(
-                    session.unreadCount > 99
-                        ? '99+'
-                        : session.unreadCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.5,
-                      height: 1.0,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                        fontSize: WeChatDimens.sessionTitleSize,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? WeChatColors.darkTextPrimary
-                            : WeChatColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (timeText.isNotEmpty)
-                    Text(
-                      timeText,
-                      style: TextStyle(
-                        fontSize: WeChatDimens.sessionTimeSize,
-                        color: isDark
-                            ? WeChatColors.darkTextPreview
-                            : WeChatColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                session.lastMessage ?? '开始聊天吧',
-                style: TextStyle(
-                  fontSize: WeChatDimens.sessionPreviewSize,
-                  color: isDark
-                      ? WeChatColors.darkTextPreview
-                      : WeChatColors.textPreview,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        if (session.isMuted) ...[
-          const SizedBox(width: 6),
-          Icon(
-            Icons.notifications_off_outlined,
-            size: 15,
-            color: isDark
-                ? WeChatColors.darkTextPreview
-                : WeChatColors.textPreview,
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildAvatar(ColorScheme colorScheme) {
     final avatarUrl = widget.session.aiCharacterAvatar;
     return Stack(

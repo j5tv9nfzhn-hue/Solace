@@ -1,7 +1,7 @@
 // 搜索与跳转（拆分生成，同库 part）
 part of '../chat_detail_screen.dart';
 
-mixin _StateSearch on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateVoice, _StateSendInput, _StateMoney {
+mixin _StateSearch on State<ChatDetailScreen>, _StateCore, _StateLoadCore, _StateSelection, _StateSideStory, _StateSendInput, _StateMoney {
   void _performSearch(String query) async {
     if (query.trim().isEmpty) {
       setState(() {
