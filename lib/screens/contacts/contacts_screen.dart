@@ -9,6 +9,7 @@ import '../../models/group_chat_session.dart';
 import '../../repositories/local_storage_repository.dart';
 import '../../services/memory_engine.dart';
 import '../../services/permission_service.dart';
+import '../../services/character_card_io_service.dart';
 import '../../services/character_recovery_resolver.dart';
 import '../chat/chat_detail_screen.dart';
 import '../group_chat/group_chat_detail_screen.dart';
@@ -80,6 +81,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
               ),
               onPressed: () => _showHiddenCharacters(context),
             ),
+          PopupMenuButton<String>(
+            tooltip: '更多',
+            onSelected: (value) {
+              if (value == 'import') _importCharacter();
+            },
+            itemBuilder: (ctx) => const [
+              PopupMenuItem(
+                value: 'import',
+                child: Text('导入角色卡'),
+              ),
+            ],
+          ),
         ],
       ),
       body: _isLoading
@@ -189,6 +202,48 @@ class _ContactsScreenState extends State<ContactsScreen> {
     );
   }
 
+  /// 导入角色卡：选本机 JSON 文件，校验通过后存为新角色（不覆盖已有角色）。
+  Future<void> _importCharacter() async {
+    final result = await CharacterCardIOService.importCharacter();
+    if (!mounted) return;
+    if (result.isCancelled) return;
+    if (result.isError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('导入失败：${result.error}')),
+      );
+      return;
+    }
+    final character = result.character!;
+    final storage = RepositoryProvider.of<LocalStorageRepository>(context);
+    await storage.saveAICharacter(character);
+    await _loadCharacters();
+    if (!mounted) return;
+    final suffix =
+        result.warnings.isEmpty ? '' : '（${result.warnings.join('；')}）';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('已导入“${character.name}”$suffix')),
+    );
+  }
+
+  /// 导出角色卡：弹系统保存框，用户选位置存 JSON 文件；取消不提示。
+  Future<void> _exportCharacter(AICharacter character) async {
+    bool saved;
+    try {
+      saved = await CharacterCardIOService.exportCharacter(character);
+    } catch (e) {
+      debugPrint('导出角色卡失败: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('导出失败，请重试')),
+      );
+      return;
+    }
+    if (!saved || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('已导出“${character.name}”的角色卡')),
+    );
+  }
+
   void _showCharacterOptions(BuildContext context, AICharacter character) {
     showModalBottomSheet(
       context: context,
@@ -210,6 +265,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
               onTap: () {
                 Navigator.pop(ctx);
                 _changeAvatar(context, character);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_upload_outlined),
+              title: const Text('导出角色卡'),
+              subtitle: const Text('存为本机 JSON 文件，不经过服务器'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _exportCharacter(character);
               },
             ),
             const Divider(height: 1),
