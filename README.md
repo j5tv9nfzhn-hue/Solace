@@ -288,7 +288,7 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk
 
 ## 数据库设计
 
-当前数据库版本：**v76**（`users.chatAlias` 我的代称），包含 40+ 张表：
+当前数据库版本：**v77**（`ai_configs.contextWindow` / `maxOutputTokens` / `reasoningDepth` 模型详细设置），包含 40+ 张表：
 
 | 表名 | 用途 |
 |------|------|

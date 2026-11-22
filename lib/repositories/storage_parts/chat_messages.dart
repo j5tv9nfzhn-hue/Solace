@@ -573,6 +573,12 @@ mixin LocalStorageRepositoryChatMessagesApi on _LocalStorageRepositoryCore {
       await LocalStorageRepository._addColumnIfNotExists(
           db, 'ai_configs', 'isMultimodal', 'INTEGER DEFAULT 0');
       await LocalStorageRepository._addColumnIfNotExists(
+          db, 'ai_configs', 'contextWindow', 'INTEGER');
+      await LocalStorageRepository._addColumnIfNotExists(
+          db, 'ai_configs', 'maxOutputTokens', 'INTEGER');
+      await LocalStorageRepository._addColumnIfNotExists(
+          db, 'ai_configs', 'reasoningDepth', 'INTEGER NOT NULL DEFAULT 0');
+      await LocalStorageRepository._addColumnIfNotExists(
           db, 'ai_configs', 'sync_seq', 'INTEGER DEFAULT 0');
       final map =
           await _filterMapToExistingColumns(db, 'ai_configs', config.toMap());

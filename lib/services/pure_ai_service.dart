@@ -98,7 +98,8 @@ class PureAIService {
             'model': config.modelName,
             'messages': messages,
             'temperature': config.temperature,
-            'max_tokens': config.maxTokens,
+            ...config.reasoningPayload,
+            'max_tokens': config.effectiveMaxOutputTokens,
             'stream': true,
           });
           request.body = requestBody;
@@ -642,7 +643,8 @@ class PureAIService {
                     'model': config.modelName,
                     'messages': messages,
                     'temperature': config.temperature,
-                    'max_tokens': config.maxTokens,
+                    ...config.reasoningPayload,
+                    'max_tokens': config.effectiveMaxOutputTokens,
                   }))
               .timeout(AppDurations.aiRequest);
         } finally {
@@ -660,7 +662,7 @@ class PureAIService {
             'model': config.modelName,
             'messages': messages,
             'temperature': config.temperature,
-            'max_tokens': config.maxTokens,
+            'max_tokens': config.effectiveMaxOutputTokens,
           }),
           response: response,
           endpointHint: 'openai_chat',

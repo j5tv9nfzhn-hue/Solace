@@ -24,11 +24,15 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
   final _baseUrlController = TextEditingController();
   final _apiKeyController = TextEditingController();
   final _modelController = TextEditingController();
+  // 模型详细设置：上下文窗口 / 最大输出（留空 = 用默认值）
+  final _contextWindowController = TextEditingController();
+  final _maxOutputController = TextEditingController();
 
   bool _isLoading = false;
   bool _tutorialExpanded = true;
   bool _isThinkingModel = true; // 表单中的推理模型开关
   bool _isMultimodal = false; // 表单中的多模态（看图）开关
+  int _reasoningDepth = 0; // 推理深度：0=关闭，1=低，2=中，3=高
   int _selectedProvider = 0; // 0=硅基流动, 1=智谱AI
   List<AIConfig> _configs = [];
 
@@ -43,7 +47,42 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
   @override
   void initState() {
     super.initState();
+    // 模型名 / 地址改了，模型族默认值提示要跟着变。
+    _modelController.addListener(_refreshBudgetPreview);
+    _baseUrlController.addListener(_refreshBudgetPreview);
+    _providerController.addListener(_refreshBudgetPreview);
     _loadConfigs();
+  }
+
+  /// 仅刷新“当前生效值”提示，不改任何表单内容。
+  void _refreshBudgetPreview() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  /// 可空数字输入：留空 = 未设置（用默认值），否则返回解析出的整数。
+  int? _parseOptionalInt(String text) {
+    final t = text.trim();
+    if (t.isEmpty) return null;
+    return int.tryParse(t);
+  }
+
+  /// 按当前表单内容拼一个仅用于预览的配置，复用 AIConfig 的生效值逻辑。
+  AIConfig _previewConfig() {
+    return AIConfig(
+      id: '',
+      providerName: _providerController.text.trim(),
+      baseUrl: _baseUrlController.text.trim(),
+      apiKey: '',
+      modelName: _modelController.text.trim(),
+      isThinkingModel: _isThinkingModel,
+      contextWindow: _parseOptionalInt(_contextWindowController.text),
+      maxOutputTokens: _parseOptionalInt(_maxOutputController.text),
+      reasoningDepth: _reasoningDepth,
+      createdAt: DateTime.now(),
+    );
   }
 
   @override
@@ -52,6 +91,8 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
     _baseUrlController.dispose();
     _apiKeyController.dispose();
     _modelController.dispose();
+    _contextWindowController.dispose();
+    _maxOutputController.dispose();
     super.dispose();
   }
 
@@ -90,6 +131,9 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
         modelName: modelName,
         isThinkingModel: _isThinkingModel,
         isMultimodal: _isMultimodal,
+        contextWindow: _parseOptionalInt(_contextWindowController.text),
+        maxOutputTokens: _parseOptionalInt(_maxOutputController.text),
+        reasoningDepth: _reasoningDepth,
         createdAt: DateTime.now(),
       );
       await storage.saveAIConfig(config);
@@ -100,6 +144,8 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
         final flags = [
           _isThinkingModel ? '推理' : '非推理',
           if (_isMultimodal) '多模态看图',
+          if (_isThinkingModel && _reasoningDepth > 0)
+            '深度${ModelBudgetDefaults.reasoningDepthLabel(_reasoningDepth)}',
         ].join(' · ');
         final msg = wasEditing ? '配置已更新（$flags）' : '配置已保存';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -122,10 +168,13 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
     _baseUrlController.clear();
     _apiKeyController.clear();
     _modelController.clear();
+    _contextWindowController.clear();
+    _maxOutputController.clear();
     setState(() {
       _editingConfigId = null;
       _isThinkingModel = true;
       _isMultimodal = false;
+      _reasoningDepth = 0;
       _discoveredModels.clear();
       _detectedProtocol = null;
     });
@@ -141,6 +190,12 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
       _modelController.text = config.modelName;
       _isThinkingModel = config.isThinkingModel;
       _isMultimodal = config.isMultimodal;
+      _reasoningDepth = config.reasoningDepth;
+      _contextWindowController.text =
+          config.contextWindow == null ? '' : '${config.contextWindow}';
+      _maxOutputController.text = config.maxOutputTokens == null
+          ? ''
+          : '${config.maxOutputTokens}';
       _discoveredModels.clear();
       _detectedProtocol = null;
     });
@@ -580,6 +635,8 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final userConfigs = List<AIConfig>.from(_configs);
+    // 仅用于“当前生效值”提示，不参与保存。
+    final preview = _previewConfig();
 
     return Scaffold(
       appBar: AppBar(
@@ -960,6 +1017,115 @@ class _AIConfigScreenState extends State<AIConfigScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // ─── 模型详细设置 ───
+                _buildSectionTitle(context, '模型详细设置'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colorScheme.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.psychology,
+                              size: 20, color: colorScheme.primary),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text('推理深度',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      SegmentedButton<int>(
+                        segments: const [
+                          ButtonSegment(value: 0, label: Text('关闭')),
+                          ButtonSegment(value: 1, label: Text('低')),
+                          ButtonSegment(value: 2, label: Text('中')),
+                          ButtonSegment(value: 3, label: Text('高')),
+                        ],
+                        selected: {_reasoningDepth},
+                        onSelectionChanged: _isThinkingModel
+                            ? (Set<int> newSelection) {
+                                setState(() {
+                                  _reasoningDepth = newSelection.first;
+                                });
+                              }
+                            : null,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        !_isThinkingModel
+                            ? '当前为非推理模型，推理深度不生效（已保留上次选择，改回推理模型后继续用）'
+                            : preview.reasoningPayload.isEmpty
+                                ? '仅 o 系列 / gpt-5 / 带 reasoning 的模型才会实际发出 reasoning_effort，其他模型填了也不会发字段'
+                                : '当前生效：发出 reasoning_effort=${preview.reasoningPayload['reasoning_effort']}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _contextWindowController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        decoration: InputDecoration(
+                          labelText: '上下文窗口（token）',
+                          hintText: '留空按模型族默认',
+                          helperText:
+                              '留空时按模型族默认，当前生效：${preview.effectiveContextWindow}',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        validator: (v) {
+                          final value = _parseOptionalInt(v ?? '');
+                          if (value == null) return null;
+                          if (value < ModelBudgetDefaults.contextWindowMin ||
+                              value > ModelBudgetDefaults.contextWindowMax) {
+                            return '上下文窗口需在 ${ModelBudgetDefaults.contextWindowMin}~${ModelBudgetDefaults.contextWindowMax} 之间';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _maxOutputController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        decoration: InputDecoration(
+                          labelText: '最大输出（token）',
+                          hintText: '留空回退旧设置 / 族默认',
+                          helperText:
+                              '留空时沿用旧最大输出（未改过为 2000），当前生效：${preview.effectiveMaxOutputTokens}',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        validator: (v) {
+                          final value = _parseOptionalInt(v ?? '');
+                          if (value == null) return null;
+                          if (value < ModelBudgetDefaults.maxOutputTokensMin ||
+                              value >
+                                  ModelBudgetDefaults.maxOutputTokensMax) {
+                            return '最大输出需在 ${ModelBudgetDefaults.maxOutputTokensMin}~${ModelBudgetDefaults.maxOutputTokensMax} 之间';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // ─── 测试连接按钮 ───
                 SizedBox(
                   width: double.infinity,
@@ -1315,6 +1481,16 @@ class _ConfigCard extends StatelessWidget {
                       color: colorScheme.onSurface.withOpacity(0.6)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
+              if (config.contextWindow != null ||
+                  config.maxOutputTokens != null ||
+                  config.reasoningDepth > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                    '上下文 ${config.effectiveContextWindow} · 最大输出 ${config.effectiveMaxOutputTokens}${config.reasoningDepth > 0 ? ' · 推理深度 ${ModelBudgetDefaults.reasoningDepthLabel(config.reasoningDepth)}' : ''}',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: colorScheme.onSurface.withOpacity(0.6))),
+              ],
               if (isActive) ...[
                 const SizedBox(height: 10),
                 Row(

@@ -1102,6 +1102,18 @@ class LocalStorageRepository extends _LocalStorageRepositoryCore with LocalStora
       await _addColumnIfNotExists(db, 'users', 'chatAlias', 'TEXT');
       debugPrint(' v76 迁移: users 表新增 chatAlias（我的代称）');
     }
+    if (oldVersion < 77) {
+      // v77: 模型详细设置持久化 —— ai_configs 新增上下文窗口 /
+      // 最大输出 / 推理深度三列。老数据三列均为 null/0，生效值走
+      // AIConfig 的族默认与旧 maxTokens 回退，行为不变。
+      await _addColumnIfNotExists(
+          db, 'ai_configs', 'contextWindow', 'INTEGER');
+      await _addColumnIfNotExists(
+          db, 'ai_configs', 'maxOutputTokens', 'INTEGER');
+      await _addColumnIfNotExists(db, 'ai_configs', 'reasoningDepth',
+          'INTEGER NOT NULL DEFAULT 0');
+      debugPrint(' v77 迁移: ai_configs 新增 contextWindow/maxOutputTokens/reasoningDepth');
+    }
   }
   Future<void> _onCreate(Database db, int version) async {
     await db.execute(
@@ -1109,7 +1121,7 @@ class LocalStorageRepository extends _LocalStorageRepositoryCore with LocalStora
     await db.execute(
         ''' CREATE TABLE ai_characters ( id TEXT PRIMARY KEY, name TEXT NOT NULL, avatarUrl TEXT, personality TEXT NOT NULL, coreDesire TEXT NOT NULL, moralBoundary TEXT NOT NULL, backgroundStory TEXT, createdAt TEXT NOT NULL, updatedAt TEXT, worldSetting TEXT, languageStyle TEXT, tabooTopics TEXT, userNickname TEXT, userAlias TEXT, userPersona TEXT, catchphrases TEXT, openingLine TEXT, dialogueExamples TEXT, interactionConfig TEXT, gender TEXT, isHidden INTEGER NOT NULL DEFAULT 0, isOnline INTEGER NOT NULL DEFAULT 1, currentStatus TEXT, lastOnlineAt TEXT, avatarGif TEXT, autoReplyStickers INTEGER NOT NULL DEFAULT 0, translatedSettings TEXT, sync_seq INTEGER NOT NULL DEFAULT 0, immutableAnchor TEXT, deviationRadius REAL NOT NULL DEFAULT 0.4, evolutionEnabled INTEGER NOT NULL DEFAULT 1, qualitativeEvolutionEnabled INTEGER NOT NULL DEFAULT 0, currentAnchor TEXT, referenceImg TEXT, fixedSeed INTEGER NOT NULL DEFAULT -1, characterTag TEXT, styleLock TEXT NOT NULL DEFAULT "anime", age INTEGER, structuredTraits TEXT, storyState TEXT ) ''');
     await db.execute(
-        ''' CREATE TABLE ai_configs ( id TEXT PRIMARY KEY, providerName TEXT NOT NULL, baseUrl TEXT NOT NULL, apiKey TEXT NOT NULL, extraApiKeys TEXT NOT NULL DEFAULT '', modelName TEXT NOT NULL, temperature REAL NOT NULL, maxTokens INTEGER NOT NULL, isActive INTEGER NOT NULL DEFAULT 1, isThinkingModel INTEGER NOT NULL DEFAULT 1, isMultimodal INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL, updatedAt TEXT, sync_seq INTEGER NOT NULL DEFAULT 0 ) ''');
+        ''' CREATE TABLE ai_configs ( id TEXT PRIMARY KEY, providerName TEXT NOT NULL, baseUrl TEXT NOT NULL, apiKey TEXT NOT NULL, extraApiKeys TEXT NOT NULL DEFAULT '', modelName TEXT NOT NULL, temperature REAL NOT NULL, maxTokens INTEGER NOT NULL, isActive INTEGER NOT NULL DEFAULT 1, isThinkingModel INTEGER NOT NULL DEFAULT 1, isMultimodal INTEGER NOT NULL DEFAULT 0, contextWindow INTEGER, maxOutputTokens INTEGER, reasoningDepth INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL, updatedAt TEXT, sync_seq INTEGER NOT NULL DEFAULT 0 ) ''');
     await db.execute(
         ''' CREATE TABLE chat_sessions ( id TEXT PRIMARY KEY, userId TEXT NOT NULL, aiCharacterId TEXT NOT NULL, aiCharacterName TEXT NOT NULL, aiCharacterAvatar TEXT, lastMessage TEXT, lastMessageTime TEXT, unreadCount INTEGER NOT NULL DEFAULT 0, intimacyLevel INTEGER NOT NULL DEFAULT 0, dailyIntimacyCount INTEGER NOT NULL DEFAULT 0, lastIntimacyDate TEXT, createdAt TEXT NOT NULL, updatedAt TEXT, isMuted INTEGER NOT NULL DEFAULT 0, isPinned INTEGER NOT NULL DEFAULT 0, backgroundImage TEXT, isHidden INTEGER NOT NULL DEFAULT 0, aiIsOnline INTEGER NOT NULL DEFAULT 1, aiCurrentStatus TEXT, lastOnlineAt TEXT, sync_seq INTEGER NOT NULL DEFAULT 0, isBlocked INTEGER NOT NULL DEFAULT 0, blockedBy INTEGER NOT NULL DEFAULT 0, blockedAt TEXT, blockReason TEXT, sessionType TEXT DEFAULT "private", intimacyMode TEXT DEFAULT "quick", streakDays INTEGER NOT NULL DEFAULT 0, isInFriction INTEGER NOT NULL DEFAULT 0, frictionDaysLeft INTEGER NOT NULL DEFAULT 0, novelMode INTEGER NOT NULL DEFAULT -1 ) ''');
     await db.execute(
@@ -1820,6 +1832,9 @@ class LocalStorageRepository extends _LocalStorageRepositoryCore with LocalStora
       'isActive': 'INTEGER NOT NULL DEFAULT 1',
       'isThinkingModel': 'INTEGER DEFAULT 1',
       'isMultimodal': 'INTEGER DEFAULT 0',
+      'contextWindow': 'INTEGER',
+      'maxOutputTokens': 'INTEGER',
+      'reasoningDepth': 'INTEGER NOT NULL DEFAULT 0',
       'createdAt': 'TEXT NOT NULL DEFAULT ""',
       'updatedAt': 'TEXT',
       'sync_seq': 'INTEGER DEFAULT 0',
@@ -2518,7 +2533,7 @@ class LocalStorageRepository extends _LocalStorageRepositoryCore with LocalStora
         break;
       case 'ai_configs':
         await db.execute(
-            ''' CREATE TABLE IF NOT EXISTS ai_configs ( id TEXT PRIMARY KEY, providerName TEXT NOT NULL, baseUrl TEXT NOT NULL, apiKey TEXT NOT NULL, extraApiKeys TEXT NOT NULL DEFAULT '', modelName TEXT NOT NULL, temperature REAL NOT NULL, maxTokens INTEGER NOT NULL, isActive INTEGER NOT NULL DEFAULT 1, isThinkingModel INTEGER NOT NULL DEFAULT 1, isMultimodal INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL, updatedAt TEXT, sync_seq INTEGER NOT NULL DEFAULT 0 ) ''');
+            ''' CREATE TABLE IF NOT EXISTS ai_configs ( id TEXT PRIMARY KEY, providerName TEXT NOT NULL, baseUrl TEXT NOT NULL, apiKey TEXT NOT NULL, extraApiKeys TEXT NOT NULL DEFAULT '', modelName TEXT NOT NULL, temperature REAL NOT NULL, maxTokens INTEGER NOT NULL, isActive INTEGER NOT NULL DEFAULT 1, isThinkingModel INTEGER NOT NULL DEFAULT 1, isMultimodal INTEGER NOT NULL DEFAULT 0, contextWindow INTEGER, maxOutputTokens INTEGER, reasoningDepth INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL, updatedAt TEXT, sync_seq INTEGER NOT NULL DEFAULT 0 ) ''');
         break;
       case 'ai_wallets':
         await db.execute(

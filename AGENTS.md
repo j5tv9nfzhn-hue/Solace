@@ -542,7 +542,7 @@ flutter test test/xxx_test.dart                        # 单文件
 
 ## 数据库
 
-- 版本常量：`lib/config/constants.dart` → `DbDefaults.dbVersion`（**当前 76**，v76 新增 `users.chatAlias` 我的代称）
+- 版本常量：`lib/config/constants.dart` → `DbDefaults.dbVersion`（**当前 77**，v77 新增 `ai_configs` 模型详细设置三列；v76 新增 `users.chatAlias` 我的代称）
 - 迁移只走 `local_storage_repository.dart` 的 `_onUpgrade`；自愈靠 `expectedColumns`（补列）+ `createMissingTable`（补表），v74 增加了自愈分支
 - 数据库文件 / `-journal` / `.db` 全部 gitignore（`solace.db` / `solace_backup.db` / `solace_raw.db`）
 - `screens/error/storage_recovery_screen.dart` + `services/storage/storage_recovery_controller.dart` 处理损坏恢复

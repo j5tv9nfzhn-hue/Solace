@@ -248,5 +248,122 @@ void main() {
       expect(updated.temperature, 0.9);
       expect(updated.id, 'config_1');
     });
+
+    test('effectiveContextWindow 未填按模型族默认，填了用填的值', () {
+      final openai = AIConfig(
+        id: 'config_1',
+        providerName: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        apiKey: 'sk-test',
+        modelName: 'gpt-4',
+        createdAt: DateTime(2026, 1, 1),
+      );
+      expect(openai.effectiveContextWindow, 128000);
+      final custom = openai.copyWith(contextWindow: 64000);
+      expect(custom.effectiveContextWindow, 64000);
+      final domestic = openai.copyWith(modelName: 'deepseek-chat');
+      expect(domestic.effectiveContextWindow, 32768);
+    });
+
+    test('effectiveMaxOutputTokens 优先级：显式值 > 旧 maxTokens > 族默认', () {
+      final base = AIConfig(
+        id: 'config_1',
+        providerName: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        apiKey: 'sk-test',
+        modelName: 'gpt-4',
+        maxTokens: 3000,
+        createdAt: DateTime(2026, 1, 1),
+      );
+      // 未填显式值时沿用旧 maxTokens
+      expect(base.effectiveMaxOutputTokens, 3000);
+      // 显式值优先于旧 maxTokens
+      expect(base.copyWith(maxOutputTokens: 8000).effectiveMaxOutputTokens,
+          8000);
+      // 旧 maxTokens 为 0 时才回退族默认
+      final fallback = base.copyWith(maxTokens: 0);
+      expect(fallback.effectiveMaxOutputTokens, 4096);
+    });
+
+    test('reasoningPayload 关闭/非推理/不支持的模型时为空', () {
+      AIConfig make({required String modelName, int depth = 2}) => AIConfig(
+            id: 'config_1',
+            providerName: 'openai',
+            baseUrl: 'https://api.openai.com/v1',
+            apiKey: 'sk-test',
+            modelName: modelName,
+            reasoningDepth: depth,
+            createdAt: DateTime(2026, 1, 1),
+          );
+      // 深度 0 = 关闭
+      expect(make(modelName: 'o1', depth: 0).reasoningPayload, isEmpty);
+      // 非推理模型不发
+      expect(
+          make(modelName: 'o1').copyWith(isThinkingModel: false)
+              .reasoningPayload,
+          isEmpty);
+      // 不在允许名单里的模型不发
+      expect(make(modelName: 'gpt-4').reasoningPayload, isEmpty);
+      expect(make(modelName: 'deepseek-chat').reasoningPayload, isEmpty);
+    });
+
+    test('reasoningPayload 深度 1/2/3 对应 low/medium/high', () {
+      AIConfig make(String modelName, int depth) => AIConfig(
+            id: 'config_1',
+            providerName: 'openai',
+            baseUrl: 'https://api.openai.com/v1',
+            apiKey: 'sk-test',
+            modelName: modelName,
+            reasoningDepth: depth,
+            createdAt: DateTime(2026, 1, 1),
+          );
+      expect(make('o1', 1).reasoningPayload,
+          {'reasoning_effort': 'low'});
+      expect(make('o1', 2).reasoningPayload,
+          {'reasoning_effort': 'medium'});
+      expect(make('gpt-5', 3).reasoningPayload,
+          {'reasoning_effort': 'high'});
+      expect(ModelBudgetDefaults.reasoningDepthLabel(0), '关闭');
+      expect(ModelBudgetDefaults.reasoningDepthLabel(1), '低');
+      expect(ModelBudgetDefaults.reasoningDepthLabel(2), '中');
+      expect(ModelBudgetDefaults.reasoningDepthLabel(3), '高');
+    });
+
+    test('模型预算范围常量', () {
+      expect(ModelBudgetDefaults.contextWindowMin, 4096);
+      expect(ModelBudgetDefaults.contextWindowMax, 2000000);
+      expect(ModelBudgetDefaults.maxOutputTokensMin, 256);
+      expect(ModelBudgetDefaults.maxOutputTokensMax, 65536);
+    });
+
+    test('toMap 和 fromMap 往返保留三个新字段', () {
+      final config = AIConfig(
+        id: 'config_1',
+        providerName: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        apiKey: 'sk-test',
+        modelName: 'o1',
+        contextWindow: 64000,
+        maxOutputTokens: 8000,
+        reasoningDepth: 2,
+        createdAt: DateTime(2026, 1, 1),
+      );
+      final roundTrip = AIConfig.fromMap(config.toMap());
+      expect(roundTrip.contextWindow, 64000);
+      expect(roundTrip.maxOutputTokens, 8000);
+      expect(roundTrip.reasoningDepth, 2);
+      // 老数据缺三列时回退默认值
+      final legacy = AIConfig.fromMap({
+        'id': 'config_1',
+        'providerName': 'openai',
+        'baseUrl': 'https://api.openai.com/v1',
+        'apiKey': 'sk-test',
+        'modelName': 'gpt-4',
+        'createdAt': DateTime(2026, 1, 1).toIso8601String(),
+      });
+      expect(legacy.contextWindow, isNull);
+      expect(legacy.maxOutputTokens, isNull);
+      expect(legacy.reasoningDepth, 0);
+    });
   });
 }
