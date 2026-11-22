@@ -476,7 +476,13 @@ class _CreateMomentScreenState extends State<CreateMomentScreen> {
   Widget _buildPrivacyRow() {
     final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () {},
+      // “按隐私性”筛选尚未实现：原来是空回调，点了没反应。
+      // 先给明确反馈，等筛选功能上线再接真实现。
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('隐私筛选即将上线，敬请期待')),
+        );
+      },
       behavior: HitTestBehavior.opaque,
       child: Container(
         width: double.infinity,
