@@ -346,19 +346,24 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                               Positioned(
                                 top: -6,
                                 right: -6,
-                                child: GestureDetector(
-                                  onTap: () => _removePendingImage(index),
-                                  child: Container(
-                                    width: 22,
-                                    height: 22,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.65),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.close,
-                                      size: 14,
-                                      color: Colors.white,
+                                child: Semantics(
+                                  label: '删除这张图片',
+                                  button: true,
+                                  child: GestureDetector(
+                                    onTap: () => _removePendingImage(index),
+                                    child: Container(
+                                      width: 28,
+                                      height: 28,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.65),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
