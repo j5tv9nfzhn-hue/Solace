@@ -481,12 +481,12 @@ class _XComposeMomentScreenState extends State<XComposeMomentScreen> {
         top: false,
         child: Row(
           children: [
-            _toolbarButton(Icons.image_outlined, _pickImage),
-            _toolbarButton(Icons.camera_alt_outlined, _pickCamera),
-            _toolbarButton(Icons.gif_box_outlined, () {}),
-            _toolbarButton(Icons.poll_outlined, () {}),
-            _toolbarButton(Icons.alternate_email, _insertMention),
-            _toolbarButton(Icons.tag, _insertHashtag),
+            _toolbarButton(Icons.image_outlined, _pickImage, '添加图片'),
+            _toolbarButton(Icons.camera_alt_outlined, _pickCamera, '拍照'),
+            _toolbarButton(Icons.gif_box_outlined, _showComingSoon, '添加动图'),
+            _toolbarButton(Icons.poll_outlined, _showComingSoon, '发起投票'),
+            _toolbarButton(Icons.alternate_email, _insertMention, '提及'),
+            _toolbarButton(Icons.tag, _insertHashtag, '话题'),
             const Spacer(),
             SizedBox(
               width: 28,
@@ -518,8 +518,17 @@ class _XComposeMomentScreenState extends State<XComposeMomentScreen> {
     );
   }
 
-  Widget _toolbarButton(IconData icon, VoidCallback onTap) {
+  // 动图与投票尚未实现：原来是空回调 () {}，点了没有任何反应，
+  // 像按钮坏了一样。先给明确反馈，等功能上线再接真实现。
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('该功能即将上线，敬请期待')),
+    );
+  }
+
+  Widget _toolbarButton(IconData icon, VoidCallback onTap, String tooltip) {
     return IconButton(
+      tooltip: tooltip,
       visualDensity: VisualDensity.compact,
       splashRadius: 20,
       icon: Icon(icon, color: MomentsTheme.primary(context), size: 22),
