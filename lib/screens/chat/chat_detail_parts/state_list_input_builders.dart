@@ -754,7 +754,9 @@ mixin _StateListInputBuilders on State<ChatDetailScreen>, _StateCore, _StateLoad
                         .getNovelDialogueColor(),
                 hasBackgroundImage: _hasVisibleBackground,
                 onMoneyTap: _moneyTapHandler(message),
-                onImageTap: message.type == MessageType.image ? () {} : null,
+                onImageTap: message.type == MessageType.image
+                    ? () => _showFullScreenImage(message.content)
+                    : null,
               ),
             ),
           );
