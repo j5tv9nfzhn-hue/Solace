@@ -15,6 +15,7 @@ import '../../widgets/safe_widget.dart';
 import 'create_moment_screen.dart';
 import 'moment_detail_screen.dart';
 import 'x/x_moments_feed_screen.dart';
+import 'x/x_notifications_screen.dart';
 
 class MomentsScreen extends StatefulWidget {
   const MomentsScreen({super.key});
@@ -139,12 +140,20 @@ class _MomentsScreenState extends State<MomentsScreen> {
                 },
               ),
               IconButton(
+                tooltip: '通知',
                 icon: Icon(
                   Icons.notifications_outlined,
                   color: colorScheme.primary,
                   size: 24,
                 ),
-                onPressed: () {},
+                // 原来是空回调 () {}，点了没反应；通知页已存在，直接接通。
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const XNotificationsScreen()),
+                  );
+                },
               ),
               PopupMenuButton<String>(
                 icon: Icon(
