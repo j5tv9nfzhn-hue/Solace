@@ -7,6 +7,8 @@ import '../services/story_state_service.dart';
 import '../services/proactive_rate_limiter.dart';
 import '../services/proactive_action_executor.dart';
 import '../services/proactive_trigger_rules.dart';
+import '../services/proactive_time_triggers.dart';
+import '../services/wellbeing_service.dart';
 import '../services/prompt/proactive_decision_prompt.dart';
 
 /// 主动决策结果
@@ -140,6 +142,45 @@ class ProactiveDecisionEngine {
             return decision;
           }
         }
+
+        // 时间规则快路径（零 LLM 开销）：饭点/久用/深夜。
+        // 情绪规则优先；时间规则只在没有消息规则命中时才评估。
+        // 节流在 ProactiveTimeTriggerState 里（开关 + 冷却 + 每日上限，
+        // SharedPreferences 持久化，跨重启有效）。
+        try {
+          final timeState = ProactiveTimeTriggerState();
+          final screenMinutes = await _recentScreenMinutes();
+          final dueRules = await timeState.checkTimeRules(
+            now: DateTime.now(),
+            recentScreenMinutes: screenMinutes,
+          );
+          if (dueRules.isNotEmpty) {
+            final rule = dueRules.first;
+            final cooldown = rule.cooldownMinutes ??
+                ProactiveRateLimiter.defaultCooldownMinutes;
+            if (_rateLimiter.canCallTool(rule.id,
+                cooldownMinutes: cooldown)) {
+              _rateLimiter.recordCall(rule.id);
+              await timeState.markFired(rule.id, DateTime.now());
+              final decision = ProactiveDecisionResult(
+                shouldAct: true,
+                actionType: rule.actionType,
+                actionArgs: rule.buildArgs(
+                  characterName: character.name,
+                  userId: userId,
+                  userMessage: lastUserMsg.content,
+                ),
+                reason: '时间触发规则匹配: ${rule.name}',
+                priority: rule.priority,
+                confidence: 0.9,
+              );
+              _logDecision(decision, 'time_rule_matched');
+              return decision;
+            }
+          }
+        } catch (e) {
+          debugPrint('ProactiveDecisionEngine: 时间规则评估失败 - $e');
+        }
       }
 
       // 1. 收集故事状态上下文
@@ -268,6 +309,21 @@ class ProactiveDecisionEngine {
         return ProactiveActionType.proactiveTopic;
       default:
         return null;
+    }
+  }
+
+  /// 最近 3 小时亮屏总分钟（供时间规则用）。
+  ///
+  /// 未授予“使用情况访问”时返回 0，带使用时长下限的规则自然不命中
+  /// （降级为只看时间窗口）；任何异常都返回 0，不阻塞决策。
+  Future<int> _recentScreenMinutes() async {
+    try {
+      final wellbeing = WellbeingService();
+      if (!await wellbeing.hasUsageAccess()) return 0;
+      final usage = await wellbeing.queryUsage(windowMinutes: 180);
+      return usage.fold<int>(0, (sum, u) => sum + u.totalMs) ~/ 60000;
+    } catch (_) {
+      return 0;
     }
   }
 

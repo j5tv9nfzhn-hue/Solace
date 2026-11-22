@@ -109,6 +109,13 @@ class PrefKeys {
   static const String novelDialogueColor = 'novel_dialogue_color';
   static const String autoDiaryEnabled = 'auto_diary_enabled';
   static const String appUsageAwareness = 'app_usage_awareness';
+
+  // ─── 生活自动化：时间触发开关（默认开，设置页可关）───
+  static const String timeTriggerMeal = 'time_trigger_meal_enabled';
+  static const String timeTriggerLongScreen =
+      'time_trigger_long_screen_enabled';
+  static const String timeTriggerLateNight =
+      'time_trigger_late_night_enabled';
   static const String pureAiModeEnabled = 'pure_ai_mode_enabled';
 
   // ─── AI Token 消耗总控（全局）───
@@ -410,6 +417,7 @@ class MethodChannels {
   static const String background = 'com.solace.background';
   static const String settings = 'com.solace.solace/settings';
   static const String notification = 'com.solace.solace/notification';
+  static const String notificationBridge = 'com.solace.solace/notification_bridge';
   static const String accessibility = 'com.solace.solace/accessibility';
   static const String screenshot = 'com.solace.solace/screenshot';
 }

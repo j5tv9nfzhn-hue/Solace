@@ -13,6 +13,7 @@ import '../settings/ai_config_screen.dart';
 import 'storage_cleanup_screen.dart';
 import '../settings/about_screen.dart';
 import '../wechat/wechat_bot_screen.dart';
+import 'automation_settings_screen.dart';
 import '../phone/phone_icon_preview_screen.dart';
 
 import '../../utils/safe_file_picker.dart';
@@ -190,6 +191,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: '自定义请求指令',
               subtitle: '亲手改每次发给 AI 的请求，最高优先级兜底',
               onTap: _openUserPromptAddendum,
+              colorScheme: colorScheme,
+            ),
+          ], colorScheme),
+          const SizedBox(height: 12),
+          _buildSectionTitle('生活自动化', colorScheme),
+          _buildCard([
+            _buildNavTile(
+              icon: Icons.auto_awesome_outlined,
+              iconBgColor: Colors.purple.withOpacity(0.1),
+              title: '生活自动化',
+              subtitle: '真实感上下文、主动提醒、确定性工具、通知监听、无障碍',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(
+                      builder: (_) => const AutomationSettingsScreen())),
               colorScheme: colorScheme,
             ),
           ], colorScheme),

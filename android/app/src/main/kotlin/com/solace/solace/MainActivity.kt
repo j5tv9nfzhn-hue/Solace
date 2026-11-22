@@ -12,6 +12,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.BatteryManager
 import android.os.Process
+import android.app.WallpaperManager
+import android.graphics.BitmapFactory
+import android.provider.AlarmClock
+import android.provider.CalendarContract
 import android.provider.MediaStore
 import android.provider.Settings
 import android.view.KeyEvent
@@ -142,6 +146,250 @@ class MainActivity : FlutterActivity() {
             "com.solace.solace/wellbeing"
         ).setMethodCallHandler { call, result ->
             handleWellbeingMethodCall(call, result)
+        }
+
+        // ─── 真实感上下文 MethodChannel（本地；日历只读标题+开始时间） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/reality"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "queryCalendarToday" -> {
+                    try {
+                        result.success(queryCalendarToday())
+                    } catch (e: SecurityException) {
+                        result.error("NO_CALENDAR_PERMISSION", "日历权限未授予", null)
+                    } catch (e: Exception) {
+                        result.error("CALENDAR_ERROR", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // ─── 确定性工具 MethodChannel（本地；只发系统 Intent / 调系统服务，
+        //       不读屏、不模拟点击、不自动支付/提交） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/automation"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setAlarm" -> {
+                    try {
+                        val hour = call.argument<Int>("hour") ?: -1
+                        val minute = call.argument<Int>("minute") ?: -1
+                        val message = call.argument<String>("message") ?: ""
+                        if (hour !in 0..23 || minute !in 0..59) {
+                            result.error("BAD_TIME", "闹钟时间不对", null)
+                            return@setMethodCallHandler
+                        }
+                        val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                            putExtra(AlarmClock.EXTRA_HOUR, hour)
+                            putExtra(AlarmClock.EXTRA_MINUTES, minute)
+                            putExtra(AlarmClock.EXTRA_MESSAGE, message)
+                            putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                        }
+                        if (intent.resolveActivity(packageManager) != null) {
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.error("NO_ALARM_APP", "系统没有可用的时钟应用", null)
+                        }
+                    } catch (e: Exception) {
+                        result.error("ALARM_FAILED", e.message, null)
+                    }
+                }
+                "addCalendarEvent" -> {
+                    try {
+                        val title = call.argument<String>("title") ?: ""
+                        val begin = call.argument<Number>("startMillis")?.toLong() ?: 0L
+                        val end = call.argument<Number>("endMillis")?.toLong() ?: 0L
+                        val description = call.argument<String>("description") ?: ""
+                        if (title.isBlank() || begin <= 0L || end <= begin) {
+                            result.error("BAD_EVENT", "日历事件缺标题或起止时间", null)
+                            return@setMethodCallHandler
+                        }
+                        val intent = Intent(Intent.ACTION_INSERT).apply {
+                            data = CalendarContract.Events.CONTENT_URI
+                            putExtra(CalendarContract.Events.TITLE, title)
+                            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, begin)
+                            putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end)
+                            if (description.isNotBlank()) {
+                                putExtra(
+                                    CalendarContract.Events.DESCRIPTION,
+                                    description
+                                )
+                            }
+                        }
+                        if (intent.resolveActivity(packageManager) != null) {
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.error("NO_CALENDAR_APP", "系统没有可用的日历应用", null)
+                        }
+                    } catch (e: Exception) {
+                        result.error("CALENDAR_FAILED", e.message, null)
+                    }
+                }
+                "setWallpaper" -> {
+                    try {
+                        val path = call.argument<String>("filePath") ?: ""
+                        val bitmap = BitmapFactory.decodeFile(path)
+                        if (bitmap == null) {
+                            result.error("BAD_IMAGE", "图片解码失败", null)
+                            return@setMethodCallHandler
+                        }
+                        WallpaperManager.getInstance(this).setBitmap(bitmap)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("WALLPAPER_FAILED", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // ─── 通知监听桥接 MethodChannel（可选模块；系统授权只能用户手动开） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/notification_bridge"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isListenerEnabled" -> {
+                    try {
+                        val enabled = Settings.Secure.getString(
+                            contentResolver,
+                            "enabled_notification_listeners"
+                        ) ?: ""
+                        val component = ComponentName(
+                            this,
+                            NotificationBridgeService::class.java
+                        ).flattenToString()
+                        result.success(enabled.contains(component))
+                    } catch (e: Exception) {
+                        result.error("LISTENER_CHECK_FAILED", e.message, null)
+                    }
+                }
+                "openListenerSettings" -> {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("FAILED", e.message, null)
+                    }
+                }
+                "getRecentNotifications" -> {
+                    try {
+                        result.success(NotificationBridgeService.snapshotJson())
+                    } catch (e: Exception) {
+                        result.error("LISTENER_FAILED", e.message, null)
+                    }
+                }
+                "replyToNotification" -> {
+                    try {
+                        val key = call.argument<String>("key") ?: ""
+                        val text = call.argument<String>("text") ?: ""
+                        if (key.isBlank() || text.isBlank()) {
+                            result.error("BAD_ARGS", "通知 key 或回复内容为空", null)
+                        } else {
+                            result.success(
+                                NotificationBridgeService.reply(key, text)
+                            )
+                        }
+                    } catch (e: Exception) {
+                        result.error("REPLY_FAILED", e.message, null)
+                    }
+                }
+                "toggleMediaPlayback" -> {
+                    try {
+                        result.success(NotificationBridgeService.toggleMedia())
+                    } catch (e: Exception) {
+                        result.error("MEDIA_FAILED", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // ─── 无障碍可选模块 MethodChannel（默认关闭；只开 App 页面，绝不自动点击） ───
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.solace.solace/accessibility"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isServiceEnabled" -> {
+                    try {
+                        val enabled = Settings.Secure.getString(
+                            contentResolver,
+                            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                        ) ?: ""
+                        val component = ComponentName(
+                            this,
+                            SolaceAccessibilityService::class.java
+                        ).flattenToString()
+                        result.success(enabled.contains(component))
+                    } catch (e: Exception) {
+                        result.error("ACCESSIBILITY_CHECK_FAILED", e.message, null)
+                    }
+                }
+                "openAccessibilitySettings" -> {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("FAILED", e.message, null)
+                    }
+                }
+                "openAppPage" -> {
+                    try {
+                        // 模块总闸：Dart 侧开关存在 FlutterSharedPreferences 里，
+                        // 关着就拒绝，连 Intent 也不发。
+                        val prefs = getSharedPreferences(
+                            "FlutterSharedPreferences", MODE_PRIVATE
+                        )
+                        val moduleEnabled = prefs.getBoolean(
+                            "flutter.accessibility_automation_enabled", false
+                        )
+                        if (!moduleEnabled) {
+                            result.error("MODULE_DISABLED", "无障碍模块未开启", null)
+                            return@setMethodCallHandler
+                        }
+                        val packageName = call.argument<String>("packageName")
+                            ?.trim() ?: ""
+                        val uri = call.argument<String>("uri")?.trim() ?: ""
+                        if (packageName.isBlank()) {
+                            result.error("BAD_ARGS", "App 包名为空", null)
+                            return@setMethodCallHandler
+                        }
+                        // 只打开目标页面，停在打开页即止：不读屏、不找节点、
+                        // 不调 performAction、不自动点任何按钮。
+                        val intent = if (uri.isNotBlank()) {
+                            Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                setPackage(packageName)
+                            }
+                        } else {
+                            packageManager.getLaunchIntentForPackage(packageName)
+                                ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        if (intent == null ||
+                            intent.resolveActivity(packageManager) == null
+                        ) {
+                            result.error("APP_NOT_FOUND", "找不到目标 App 或页面", null)
+                        } else {
+                            startActivity(intent)
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        result.error("OPEN_APP_FAILED", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
         }
 
         // ─── 微信机器人前台保活 ───
@@ -325,6 +573,54 @@ class MainActivity : FlutterActivity() {
                 put("totalMs", s.totalTimeInForeground)
                 put("lastUsed", s.lastTimeUsed)
             })
+        }
+        return arr.toString()
+    }
+
+    // ─── 真实感上下文：今日日程（只读标题 + 开始时间，不读描述/地点/参与人） ───
+
+    private fun queryCalendarToday(): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            checkSelfPermission(android.Manifest.permission.READ_CALENDAR) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            throw SecurityException("日历权限未授予")
+        }
+        val dayStart = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val dayEnd = dayStart + 24 * 60 * 60 * 1000L
+        val projection = arrayOf(
+            CalendarContract.Events.TITLE,
+            CalendarContract.Events.DTSTART
+        )
+        val selection =
+            "${CalendarContract.Events.DTSTART} >= ? AND ${CalendarContract.Events.DTSTART} < ?"
+        val cursor = contentResolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            projection,
+            selection,
+            arrayOf(dayStart.toString(), dayEnd.toString()),
+            "${CalendarContract.Events.DTSTART} ASC"
+        ) ?: return "[]"
+        val arr = JSONArray()
+        cursor.use {
+            val titleIdx = it.getColumnIndex(CalendarContract.Events.TITLE)
+            val startIdx = it.getColumnIndex(CalendarContract.Events.DTSTART)
+            var count = 0
+            while (it.moveToNext() && count < 10) {
+                val title = if (titleIdx >= 0) it.getString(titleIdx) ?: "" else ""
+                if (title.isBlank()) continue
+                val start = if (startIdx >= 0) it.getLong(startIdx) else 0L
+                arr.put(JSONObject().apply {
+                    put("title", if (title.length > 40) title.take(40) else title)
+                    put("startMillis", start)
+                })
+                count++
+            }
         }
         return arr.toString()
     }

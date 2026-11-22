@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 无障碍可选模块配置：只声明服务存在，不读屏、不做手势。
+     canRetrieveWindowContent=false：不取窗口内容；
+     canPerformGestures=false：不执行手势；
+     只订阅窗口状态变化，且服务侧不读事件内容。 -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/solace_accessibility_service_description"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:canPerformGestures="false" />
