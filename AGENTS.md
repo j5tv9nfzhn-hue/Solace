@@ -14,7 +14,7 @@
 
 Flutter 写的 **AI 陪伴应用**（Android 单平台）。多角色聊天 + 情感记忆引擎 + 人生模拟 + 微信 Bot + 语音通话。
 **隐私优先**：用户数据全在本机 SQLite（`solace.db`），不上传。
-当前版本 `20.1.0+20001`，`main` 已与 `origin/main` 同步。2026-11-19 起 `origin` 重绑为
+当前版本 `20.1.1+20002`，`main` 已与 `origin/main` 同步。2026-11-19 起 `origin` 重绑为
 **`j5tv9nfzhn-hue/Solace`**（旧账号 `wuyiliu391-hub/Solace` 的 fork；旧账号已停用）。
 
 ## ⚠️ 本机没有 Flutter / JDK / Android SDK —— 唯一校验途径是 GitHub Actions
@@ -592,7 +592,7 @@ bash deploy.sh            # 根目录是 thin wrapper，转发 scripts/deploy.sh
 |------|------|
 | `.github/workflows/ci.yml` | **唯一测试闸门**。analyze + test，缓存策略见上文 |
 | `.github/workflows/apk.yml` | APK 交付。仅 `workflow_dispatch` / `v*` tag 触发，**不跑测试** |
-| `README.md` | 功能、架构、调试方法论（2026-11-19 已同步至 20.1.0 / db v76 / 含 `--split-per-abi` 的构建命令） |
+| `README.md` | 功能、架构、调试方法论（2026-11-23 已同步至 20.1.1 / db v77 / 含 `--split-per-abi` 的构建命令） |
 | `docs/roadmap-20.0.0.md` | 20.0.0「共生」路线图 + Phase 0 |
 | `docs/release-20.0.0.md` | 20.0.0 发布记录（权威） |
 | `docs/design/20.0.0-mainline-*.md` | 三条主线设计 |

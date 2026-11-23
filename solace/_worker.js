@@ -11,11 +11,11 @@ function versionCompare(v1, v2) {
 }
 
 const VERSION_DATA = {
-  latestVersion: '20.1.0',
-  buildNumber: 20001,
+  latestVersion: '20.1.1',
+  buildNumber: 20002,
   minSdk: 23,
-  releaseDate: '2026-10-01',
-  downloadUrl: 'https://solace-doc.pages.dev/api/v1/download?v=20.1.0',
+  releaseDate: '2026-11-23',
+  downloadUrl: 'https://solace-doc.pages.dev/api/v1/download?v=20.1.1',
   changelog: [
     '新增第二个语音合成供应商 Fish Audio：S2.1 Pro 免费档，可克隆音色、可调表现力',
     '语音通话稳定性：连续对话中锁定表现力与语速，消除「前稳后飘、尾段喘不上气」',
