@@ -168,6 +168,11 @@ abstract class _AIServiceCore {
 
   bool _isCompactContextModel(String modelName);
 
+  /// 计算本次可发送的历史条数（实现在主类，见 [_historyContextLimit]）。
+  /// 3e18a88 把调用点改成调这个方法，却没在这里补抽象声明，
+  /// 导致 mixin 里调不到主类方法，CI analyze 报 undefined_method。
+  int _historyContextLimit(bool isCompact);
+
   String _buildCompactContextAnchor({
     required AICharacter character,
     required String currentTopic,
@@ -260,7 +265,7 @@ class AIService extends _AIServiceCore with AIServiceCleanSplitApi, AIServiceCon
           : Limit.chatHistoryContext;
     }
     final byWindow = (window ~/ 120 * 3) ~/ 4;
-    return byWindow.clamp(8, isCompact ? 40 : 300);
+    return byWindow.clamp(8, isCompact ? 40 : 300).toInt();
   }
   bool _isCompactContextModel(String modelName) {
     final lower = modelName.toLowerCase();
