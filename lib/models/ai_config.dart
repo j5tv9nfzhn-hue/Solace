@@ -184,7 +184,12 @@ class AIConfig extends Equatable {
     return _nonThinkingKeywords.any((kw) => lower.contains(kw));
   }
 
-  /// 按模型名 / baseURL 推断模型族（法功能海外策略用）
+  /// 按模型名 / baseURL 推断模型族（法功能海外策略与预算默认用）。
+  ///
+  /// 优先级：模型名关键词 > 端点/服务商。族是模型的属性，不是端点的：
+  /// 中转站上任何模型都可能走 OpenAI 兼容端点（baseUrl 含 openai.com），
+  /// 不能因为端点就把 deepseek-chat 判成 openai 族。
+  /// 模型名没有关键词时才用端点兜底（如 custom 模型名 + 官方端点）。
   static ModelFamily detectModelFamily({
     required String modelName,
     String baseUrl = '',
@@ -195,27 +200,29 @@ class AIConfig extends Equatable {
     final p = providerName.toLowerCase();
     final blob = '$m $b $p';
 
-    if (m.contains('claude') || blob.contains('anthropic')) {
-      return ModelFamily.anthropic;
-    }
-    if (m.contains('gemini') ||
-        blob.contains('generativelanguage') ||
-        blob.contains('googleapis')) {
-      return ModelFamily.google;
-    }
-    if (m.contains('grok') || blob.contains('x.ai') || blob.contains('api.x.ai')) {
-      return ModelFamily.xai;
-    }
-    if (m.contains('gpt-') ||
-        blob.contains('openai.com') ||
-        blob.contains('api.openai')) {
-      return ModelFamily.openai;
-    }
+    // 1) 模型名关键词优先。
+    if (m.contains('claude')) return ModelFamily.anthropic;
+    if (m.contains('gemini')) return ModelFamily.google;
+    if (m.contains('grok')) return ModelFamily.xai;
     const domestic = [
       'deepseek', 'qwen', 'glm', 'chatglm', 'hunyuan', 'minimax', 'abab',
       'moonshot', 'kimi', 'yi-', 'spark', 'ernie', 'internlm', 'step-',
       'doubao', '豆包',
     ];
+    if (domestic.any((k) => m.contains(k))) return ModelFamily.domestic;
+    if (m.contains('gpt-')) return ModelFamily.openai;
+
+    // 2) 模型名无关键词时，用端点/服务商兜底。
+    if (blob.contains('anthropic')) return ModelFamily.anthropic;
+    if (blob.contains('generativelanguage') || blob.contains('googleapis')) {
+      return ModelFamily.google;
+    }
+    if (blob.contains('x.ai') || blob.contains('api.x.ai')) {
+      return ModelFamily.xai;
+    }
+    if (blob.contains('openai.com') || blob.contains('api.openai')) {
+      return ModelFamily.openai;
+    }
     if (domestic.any((k) => blob.contains(k))) {
       return ModelFamily.domestic;
     }
