@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="accessibility_service_description">Solace 无障碍服务。让 AI 角色能够感知屏幕内容、辅助点击和滑动操作。不会收集或上传任何个人信息。</string>
     <string name="solace_accessibility_service_description">Solace 无障碍可选模块（默认关闭）。只按你的明确指令打开指定 App 的页面，停在打开页即止；不读屏、不模拟点击、不自动点确认/支付/提交。核心功能不依赖它，关掉不影响任何核心体验。</string>
 </resources>

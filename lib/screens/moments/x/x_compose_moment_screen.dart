@@ -522,7 +522,7 @@ class _XComposeMomentScreenState extends State<XComposeMomentScreen> {
   // 像按钮坏了一样。先给明确反馈，等功能上线再接真实现。
   void _showComingSoon() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('该功能即将上线，敬请期待')),
+      const SnackBar(content: Text('该功能暂未开放')),
     );
   }
 

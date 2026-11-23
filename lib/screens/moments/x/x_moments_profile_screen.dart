@@ -282,7 +282,7 @@ class _XMomentsProfileScreenState extends State<XMomentsProfileScreen>
                               onPressed: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text('关注功能即将上线，敬请期待')),
+                                      content: Text('关注功能暂未开放')),
                                 );
                               },
                               style: OutlinedButton.styleFrom(

@@ -480,7 +480,7 @@ class _CreateMomentScreenState extends State<CreateMomentScreen> {
       // 先给明确反馈，等筛选功能上线再接真实现。
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('隐私筛选即将上线，敬请期待')),
+          const SnackBar(content: Text('隐私筛选暂未开放')),
         );
       },
       behavior: HitTestBehavior.opaque,
